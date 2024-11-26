@@ -1,6 +1,8 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/authRoutes"; // Adjust the path based on your directory structure
+import deviceRoutes from "./routes/deviceRoutes";
+import rewardRoutes from "./routes/rewardRoutes";
 
 const app = express();
 
@@ -8,12 +10,17 @@ const app = express();
 app.use(express.json()); // For parsing JSON bodies
 app.use(cookieParser()); // For cookie parsing
 
-// Use authentication routes
-app.use("/auth", authRoutes); // Mount the routes under /auth path
+// Authentication routes
+app.use("/auth", authRoutes);
 
-// Define a simple route
+// Device Routes
+app.use("/device", deviceRoutes);
+
+// Reward Routes
+app.use("/Reward", rewardRoutes);
+
 app.get("/", (req, res) => {
-  res.send("Hello, World!");
+  res.sendStatus(200);
 });
 
 // Set the port

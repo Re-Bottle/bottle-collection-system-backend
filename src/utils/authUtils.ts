@@ -1,31 +1,29 @@
 import { Response, NextFunction, Request } from "express";
 import jwt from "jsonwebtoken";
+import { User } from "../types/express";
 
 export const authenticateJWT = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   const token = req.cookies.auth_token;
 
   if (!token) {
-    return res.status(403).json({ message: "No token provided" });
-  }
-
-  interface DecodedUser {
-    id: string;
-    username: string;
-    // Add other properties as needed
+    res.status(403).json({ message: "No token provided" });
+    return;
   }
 
   jwt.verify(
     token,
-    "your-secret-key",
+    process.env.SECRET_KEY ||
+      "8e0f16e244aeb7b71fa3ab9299db3bc3e465d2b91962a5b4890c86b1da6c7fc1",
     (err: jwt.VerifyErrors | null, decoded: any) => {
       if (err) {
-        return res.status(403).json({ message: "Invalid or expired token" });
+        res.status(403).json({ message: "Invalid or expired token" });
+        return;
       }
-      req.user = decoded as DecodedUser; // Store the decoded user info in the request
+      req.user = decoded as User; // Ensure decoded is typed as User
       next();
     }
   );

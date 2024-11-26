@@ -1,7 +1,12 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, Application } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { createUser, findUserByUsername } from "../controllers/authController";
+import {
+  createUser,
+  findUserById,
+  findUserByUsername,
+} from "../controllers/authController";
+import { authenticateJWT } from "../utils/authUtils";
 
 const router = Router();
 
@@ -37,7 +42,8 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
     const { username, password } = req.body;
 
     // Find the user by username
-    const user = await findUserByUsername(username);
+    const user = findUserByUsername(username);
+
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
@@ -50,8 +56,9 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
 
     // Create a JWT token
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
-      "your-secret-key",
+      { id: user.id, username: user.username },
+      process.env.SECRET_KEY ||
+        "8e0f16e244aeb7b71fa3ab9299db3bc3e465d2b91962a5b4890c86b1da6c7fc1",
       { expiresIn: "1h" }
     );
 
@@ -61,17 +68,46 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
       secure: process.env.NODE_ENV === "production",
     });
 
-    res.json({ message: "Login successful", token });
+    return res.json({ message: "Login successful", token });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
 // Logout route
-router.post("/logout", (req: Request, res: Response) => {
+router.post("/logout", async (req: Request, res: Response): Promise<any> => {
   res.clearCookie("auth_token");
-  res.json({ message: "Logged out successfully" });
+  return res.json({ message: "Logged out successfully" });
+});
+
+// // Get User Details
+router.get(
+  "/user",
+  authenticateJWT,
+  async (req: Request, res: Response): Promise<any> => {
+    if (req.user == undefined) {
+      return res.status(404).json({ message: "User details missing" });
+    }
+    try {
+      const userId = req.user.id; // Assuming user ID is stored in req.user by middleware
+      const user = await findUserById(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      return res.json({ user });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
+
+// Update User Details
+router.post("/user", async (req: Request, res: Response): Promise<any> => {
+  // TODO: Implement Function
+  throw new Error("Unimplemented Function");
 });
 
 export default router;
