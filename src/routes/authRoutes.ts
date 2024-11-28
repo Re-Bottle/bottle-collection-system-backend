@@ -68,7 +68,7 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
       secure: process.env.NODE_ENV === "production",
     });
 
-    return res.json({ message: "Login successful", email, id: user.id });
+    return res.json({ message: "Login successful", email, id: user.id, name: user.name });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
