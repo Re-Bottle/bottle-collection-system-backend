@@ -1,14 +1,16 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
+
 import authRoutes from "./routes/authRoutes"; // Adjust the path based on your directory structure
 import deviceRoutes from "./routes/deviceRoutes";
 import rewardRoutes from "./routes/rewardRoutes";
-
 const app = express();
 
 // Middleware
 app.use(express.json()); // For parsing JSON bodies
 app.use(cookieParser()); // For cookie parsing
+app.use(cors());
 
 // Authentication routes
 app.use("/auth", authRoutes);

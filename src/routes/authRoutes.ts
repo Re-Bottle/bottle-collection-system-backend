@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import {
   createUser,
   findUserById,
-  findUserByUsername,
+  findUserByEmail,
 } from "../controllers/authController";
 import { authenticateJWT } from "../utils/authUtils";
 
@@ -13,10 +13,10 @@ const router = Router();
 // Signup route
 router.post("/signup", async (req: Request, res: Response): Promise<any> => {
   try {
-    const { username, password } = req.body;
+    const { email, password, name } = req.body;
 
     // Check if the user already exists
-    const userExists = await findUserByUsername(username);
+    const userExists = findUserByEmail(email);
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -25,7 +25,7 @@ router.post("/signup", async (req: Request, res: Response): Promise<any> => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create the user
-    const newUser = await createUser(username, hashedPassword);
+    const newUser = createUser(email, hashedPassword, name);
 
     return res
       .status(201)
@@ -39,10 +39,10 @@ router.post("/signup", async (req: Request, res: Response): Promise<any> => {
 // Login route
 router.post("/login", async (req: Request, res: Response): Promise<any> => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    // Find the user by username
-    const user = findUserByUsername(username);
+    // Find the user by email
+    const user = findUserByEmail(email);
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -56,9 +56,9 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
 
     // Create a JWT token
     const token = jwt.sign(
-      { id: user.id, username: user.username },
+      { id: user.id, email },
       process.env.SECRET_KEY ||
-        "8e0f16e244aeb7b71fa3ab9299db3bc3e465d2b91962a5b4890c86b1da6c7fc1",
+      "8e0f16e244aeb7b71fa3ab9299db3bc3e465d2b91962a5b4890c86b1da6c7fc1",
       { expiresIn: "1h" }
     );
 
@@ -68,7 +68,7 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
       secure: process.env.NODE_ENV === "production",
     });
 
-    return res.json({ message: "Login successful", token });
+    return res.json({ message: "Login successful", email, id: user.id });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
