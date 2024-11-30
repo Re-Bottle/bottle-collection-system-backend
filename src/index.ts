@@ -5,6 +5,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes"; // Adjust the path based on your directory structure
 import deviceRoutes from "./routes/deviceRoutes";
 import rewardRoutes from "./routes/rewardRoutes";
+
 const app = express();
 
 // Middleware

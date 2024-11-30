@@ -12,6 +12,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.699.0",
+    "@aws-sdk/client-iot": "^3.699.0",
+    "@aws-sdk/lib-dynamodb": "^3.699.0",
     "bcryptjs": "^2.4.3",
     "bottle-collection-system-backend": "file:",
     "cookie-parser": "^1.4.7",
