@@ -146,7 +146,7 @@ router.post(
   }
 );
 
-router.get(
+router.post(
   "/getDevices",
   authenticateJWT,
   async (req: Request, res: Response): Promise<any> => {

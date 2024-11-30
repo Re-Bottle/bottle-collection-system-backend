@@ -11,7 +11,7 @@ const app = express();
 // Middleware
 app.use(express.json()); // For parsing JSON bodies
 app.use(cookieParser()); // For cookie parsing
-app.use(cors());
+app.use(cors({ credentials: true, origin: "http://localhost:3001", methods: ['GET', 'POST'], })); // For allowing cross-origin requests
 
 // Authentication routes
 app.use("/auth", authRoutes);

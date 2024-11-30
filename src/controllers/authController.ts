@@ -13,7 +13,7 @@ export const createVendor = (
   password: string,
   name: string
 ): User => {
-  const newUser = { id: String(userIdCounter++), email, password, name };
+  const newUser = { id: String(vendorIdCounter++), email, password, name };
   vendors.push(newUser);
   return newUser;
 };

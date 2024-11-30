@@ -69,10 +69,13 @@ router.post(
         expiresIn: "1h",
       });
 
+      console.log("token while login: ", token);
+
       // Set the token as a cookie
       res.cookie("auth_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        // httpOnly: true,
+        // secure: process.env.NODE_ENV === "production",
+        // sameSite: 'lax'
       });
 
       return res.json({
