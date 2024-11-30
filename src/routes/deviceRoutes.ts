@@ -7,6 +7,12 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { authenticateJWT } from "../utils/authUtils";
+import {
+  findDeviceById,
+  findDevicesByVendor,
+  registerDevice,
+} from "../controllers/deviceController";
+import { Device } from "../types/express";
 
 const router = Router();
 
@@ -42,51 +48,55 @@ router.post("/newDevice", async (req: Request, res: Response): Promise<any> => {
   // The resulting certificate is the send to the IOT device.
 
   try {
-    const deviceID: string = req.body.deviceID;
-    const timestamp = new Date();
+    let deviceID: String | null = req.body.deviceID;
+    deviceID = registerDevice(deviceID);
 
-    console.log(`timestamp: ${timestamp.toString()}`);
-    console.log(`DeviceId: ${deviceID}`);
-
-    if (1 === 1) return res.sendStatus(200);
-
-    // TODO: validate DeviceId
-
-    if (deviceID) {
-      // Device is registered and wants to know its state and update its access timestamp
-      const command = new UpdateCommand({
-        TableName: "Devices",
-        Key: {
-          _id: "_id",
-        },
-        UpdateExpression: "set accessed_time = :time",
-        ExpressionAttributeValues: {
-          ":time": timestamp.toString(),
-        },
-        ReturnValues: "ALL_NEW",
-      });
-
-      const response = await docClient.send(command);
-      console.log(response);
-
-      // TODO: Check if device was claimed and generate an IOT certificate
-
-      return res.sendStatus(200);
+    if (deviceID != null) {
+      return res.status(200).json({ deviceID });
     } else {
-      // Device is New and needs a Device ID
-      const command = new PutCommand({
-        TableName: "Devices",
-        Item: {
-          _id: "Shiba Inu",
-        },
-      });
-
-      const response = await docClient.send(command);
-      console.log(response);
-      return response;
+      return res.sendStatus(400);
     }
+
+    // if (1 === 1) return res.sendStatus(200);
+
+    // // TODO: validate DeviceId
+
+    // if (deviceID) {
+    //   // Device is registered and wants to know its state and update its access timestamp
+    //   const command = new UpdateCommand({
+    //     TableName: "Devices",
+    //     Key: {
+    //       _id: "_id",
+    //     },
+    //     UpdateExpression: "set accessed_time = :time",
+    //     ExpressionAttributeValues: {
+    //       ":time": timestamp.toString(),
+    //     },
+    //     ReturnValues: "ALL_NEW",
+    //   });
+
+    //   const response = await docClient.send(command);
+    //   console.log(response);
+
+    //   // TODO: Check if device was claimed and generate an IOT certificate
+
+    //   return res.sendStatus(200);
+    // } else {
+    //   // Device is New and needs a Device ID
+    //   const command = new PutCommand({
+    //     TableName: "Devices",
+    //     Item: {
+    //       _id: "Shiba Inu",
+    //     },
+    //   });
+
+    //   const response = await docClient.send(command);
+    //   console.log(response);
+    //   return response;
+    // }
   } catch (e) {
     console.error(e);
+    return res.sendStatus(500);
   }
 });
 
@@ -101,7 +111,29 @@ router.post(
   "/claimDevice",
   authenticateJWT,
   async (req: Request, res: Response): Promise<any> => {
-    // TODO: Implement Function to claim a device
+    const vendorId = req.body.vendorId;
+    const deviceId = req.body.deviceId;
+    const deviceName = req.body.deviceName;
+    const deviceLocation = req.body.deviceLocation;
+    const deviceDescription = req.body.deviceDescription;
+
+    const device = findDeviceById(deviceId);
+
+    if (!device) {
+      return res.status(404).json({ message: "Device not found" });
+    } else {
+      if (!device.claimableStatus) {
+        return res.status(400).json({ message: "Device is not claimable" });
+      } else {
+        // Update the device record
+        device.claimableStatus = false;
+        device.vendorId = vendorId;
+        device.deviceName = deviceName;
+        device.deviceLocation = deviceLocation;
+        device.deviceDescription = deviceDescription;
+        return res.status(200).json({ message: "Device claimed successfully" });
+      }
+    }
   }
 );
 
@@ -111,6 +143,19 @@ router.post(
   async (req: Request, res: Response): Promise<any> => {
     // TODO: Implement Function
     throw new Error("Unimplemented Function");
+  }
+);
+
+router.get(
+  "/getDevices",
+  authenticateJWT,
+  async (req: Request, res: Response): Promise<any> => {
+    const vendorId = req.body.vendorId;
+    if (!vendorId)
+      return res.status(400).json({ message: "Vendor ID missing" });
+    const devices: Device[] | undefined = findDevicesByVendor(vendorId);
+    if (!devices) return res.status(404).json({ message: "No devices found" });
+    return res.status(200).json({ devices });
   }
 );
 

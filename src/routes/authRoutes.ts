@@ -15,7 +15,7 @@ const SECRET_KEY =
   process.env.SECRET_KEY ||
   "8e0f16e244aeb7b71fa3ab9299db3bc3e465d2b91962a5b4890c86b1da6c7fc1";
 
-// Signup route
+// Signup route for a vendor
 router.post(
   "/signupVendor",
   async (req: Request, res: Response): Promise<any> => {
@@ -88,7 +88,7 @@ router.post(
   }
 );
 
-// Signup route
+// Signup route for users
 router.post("/signup", async (req: Request, res: Response): Promise<any> => {
   try {
     const { email, password, name } = req.body;
@@ -107,14 +107,14 @@ router.post("/signup", async (req: Request, res: Response): Promise<any> => {
 
     return res
       .status(201)
-      .json({ message: "User created successfully", user: newUser });
+      .json({ message: "User created successfully", user: { id: newUser.id } });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }
 });
 
-// Login route
+// Login route for users
 router.post("/login", async (req: Request, res: Response): Promise<any> => {
   try {
     const { email, password } = req.body;
