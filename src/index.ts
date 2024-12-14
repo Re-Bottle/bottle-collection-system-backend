@@ -5,13 +5,20 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes"; // Adjust the path based on your directory structure
 import deviceRoutes from "./routes/deviceRoutes";
 import rewardRoutes from "./routes/rewardRoutes";
+import { authenticateJWT } from "./utils/authUtils";
 
 const app = express();
 
 // Middleware
 app.use(express.json()); // For parsing JSON bodies
 app.use(cookieParser()); // For cookie parsing
-app.use(cors({ credentials: true, origin: "http://localhost:3001", methods: ['GET', 'POST'], })); // For allowing cross-origin requests
+app.use(
+  cors({
+    credentials: true,
+    origin: "http://localhost:3001",
+    methods: ["GET", "POST"],
+  })
+); // For allowing cross-origin requests
 
 // Authentication routes
 app.use("/auth", authRoutes);
@@ -23,6 +30,10 @@ app.use("/device", deviceRoutes);
 app.use("/Reward", rewardRoutes);
 
 app.get("/", (req, res) => {
+  res.sendStatus(200);
+});
+
+app.post("/authenticateJWT", authenticateJWT, (req, res) => {
   res.sendStatus(200);
 });
 

@@ -1,5 +1,12 @@
 import { Router, Request, Response } from "express";
-// import { StartThingRegistrationTaskCommand } from "@aws-sdk/client-iot";
+import {
+  AttachPolicyCommand,
+  CreateKeysAndCertificateCommand,
+  CreateThingCommand,
+  IoTClient,
+  StartThingRegistrationTaskCommand,
+  StartThingRegistrationTaskRequest,
+} from "@aws-sdk/client-iot";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   PutCommand,
@@ -16,8 +23,10 @@ import { Device } from "../types/express";
 
 const router = Router();
 
-const client = new DynamoDBClient({ region: "ap-south-1" });
-const docClient = DynamoDBDocumentClient.from(client);
+const iotClient = new IoTClient({ region: "ap-south-1" });
+
+// const client = new DynamoDBClient({ region: "ap-south-1" });
+// const docClient = DynamoDBDocumentClient.from(client);
 
 /**
  * Modal for DynamoDB Record
@@ -36,8 +45,7 @@ const docClient = DynamoDBDocumentClient.from(client);
  *  - send this unique id back to the device.
  *  - Device will store this id internally.
  */
-router.post("/newDevice", async (req: Request, res: Response): Promise<any> => {
-  // TODO: Implement Function to create a new Device Entry and make it claimable
+router.post("/register", async (req: Request, res: Response): Promise<any> => {
   // Steps
   // Request needs to contain the Time of request and other device details (MAC Address)
   // Add device to the DynamoDB database as Claimable
@@ -47,7 +55,35 @@ router.post("/newDevice", async (req: Request, res: Response): Promise<any> => {
   // if the device was claimed within 10 minutes, call the registerDevice AWS function passing the vendors id
   // The resulting certificate is the send to the IOT device.
 
+  // Device will send device_id
+  const device_id = req.body.device_id;
+
   try {
+    // Step 1: Create keys and certificate
+    const createKeysAndCertCommand = new CreateKeysAndCertificateCommand({
+      setAsActive: true,
+    });
+    const keysAndCert = await iotClient.send(createKeysAndCertCommand);
+
+    // Step 2: Attach policy to certificate
+    const attachPolicyCommand = new AttachPolicyCommand({
+      policyName: "",
+      target: keysAndCert.certificateArn,
+    });
+    await iotClient.send(attachPolicyCommand);
+
+    // Step 3: Create IoT thing
+    const createThingCommand = new CreateThingCommand({ thingName: device_id });
+    const thing = await iotClient.send(createThingCommand);
+
+    // Step 4: Return the provisioning information
+    return res.json({
+      certificateArn: keysAndCert.certificateArn,
+      certificatePem: keysAndCert.certificatePem,
+      privateKey: keysAndCert.keyPair?.PrivateKey,
+      thingName: thing.thingName,
+    });
+
     let deviceID: String | null = req.body.deviceID;
     deviceID = registerDevice(deviceID);
 
@@ -56,44 +92,6 @@ router.post("/newDevice", async (req: Request, res: Response): Promise<any> => {
     } else {
       return res.sendStatus(400);
     }
-
-    // if (1 === 1) return res.sendStatus(200);
-
-    // // TODO: validate DeviceId
-
-    // if (deviceID) {
-    //   // Device is registered and wants to know its state and update its access timestamp
-    //   const command = new UpdateCommand({
-    //     TableName: "Devices",
-    //     Key: {
-    //       _id: "_id",
-    //     },
-    //     UpdateExpression: "set accessed_time = :time",
-    //     ExpressionAttributeValues: {
-    //       ":time": timestamp.toString(),
-    //     },
-    //     ReturnValues: "ALL_NEW",
-    //   });
-
-    //   const response = await docClient.send(command);
-    //   console.log(response);
-
-    //   // TODO: Check if device was claimed and generate an IOT certificate
-
-    //   return res.sendStatus(200);
-    // } else {
-    //   // Device is New and needs a Device ID
-    //   const command = new PutCommand({
-    //     TableName: "Devices",
-    //     Item: {
-    //       _id: "Shiba Inu",
-    //     },
-    //   });
-
-    //   const response = await docClient.send(command);
-    //   console.log(response);
-    //   return response;
-    // }
   } catch (e) {
     console.error(e);
     return res.sendStatus(500);
@@ -131,6 +129,7 @@ router.post(
         device.deviceName = deviceName;
         device.deviceLocation = deviceLocation;
         device.deviceDescription = deviceDescription;
+
         return res.status(200).json({ message: "Device claimed successfully" });
       }
     }

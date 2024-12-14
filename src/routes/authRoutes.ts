@@ -23,9 +23,9 @@ router.post(
       const { email, password, name } = req.body;
 
       // Check if the user already exists
-      const userExists = findVendorByEmail(email);
+      const userExists = await findVendorByEmail(email);
       if (userExists) {
-        return res.status(400).json({ message: "User already exists" });
+        return res.status(400).json({ message: "Vendor already exists" });
       }
 
       // Hash the password
@@ -52,10 +52,10 @@ router.post(
       const { email, password } = req.body;
 
       // Find the user by email
-      const user = findVendorByEmail(email);
+      const user = await findVendorByEmail(email);
 
       if (!user) {
-        return res.status(400).json({ message: "User not found" });
+        return res.status(400).json({ message: "Vendor not found" });
       }
 
       // Check if password is correct
@@ -97,7 +97,7 @@ router.post("/signup", async (req: Request, res: Response): Promise<any> => {
     const { email, password, name } = req.body;
 
     // Check if the user already exists
-    const userExists = findUserByEmail(email);
+    const userExists = await findUserByEmail(email);
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -106,7 +106,7 @@ router.post("/signup", async (req: Request, res: Response): Promise<any> => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create the user
-    const newUser = createUser(email, hashedPassword, name);
+    const newUser = await createUser(email, hashedPassword, name);
 
     return res
       .status(201)
@@ -123,7 +123,7 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
     const { email, password } = req.body;
 
     // Find the user by email
-    const user = findUserByEmail(email);
+    const user = await findUserByEmail(email);
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });

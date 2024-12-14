@@ -1,7 +1,7 @@
 import { Device } from "../types/express";
 
 // In-memory users "database"
-const devices: Device[] = [];
+const devices: Map<String, Device> = new Map();
 
 let deviceIdCounter = 1;
 
@@ -15,7 +15,7 @@ export const registerDevice = (id: String | null): String | null => {
   // else search for the id in the dynamodb and return the data + id
   if (id) {
     // Update the DynamoDB entry
-    const deviceFound = devices.find((device) => device.deviceId === id);
+    const deviceFound = devices.get(id);
     deviceFound!.lastActionTimestamp = new Date();
     return deviceFound !== undefined ? deviceFound.deviceId : null;
   } else {
@@ -32,16 +32,28 @@ export const registerDevice = (id: String | null): String | null => {
       lastActionTimestamp: new Date(),
       deviceActiveStatus: true,
     };
-    devices.push(newDevice);
+    devices.set(tempDeviceID, newDevice);
     return tempDeviceID;
   }
 };
 
 export const findDevicesByVendor = (vendorId: string): Device[] | undefined => {
-  return devices.filter((device) => device.vendorId === vendorId);
+  const result: Device[] = [];
+
+  devices.forEach((device) => {
+    if (device.vendorId === vendorId) {
+      result.push(device);
+    }
+  });
+
+  return result;
 };
 
 // Find device by vendor
-export const findDeviceById = (deviceId: string): Device | undefined => {
-  return devices.find((device) => device.deviceId === deviceId);
-};
+export const findDeviceById = (deviceId: string): Device | undefined =>
+  devices.get(deviceId);
+
+export const updateDeviceById = (
+  deviceId: string,
+  device: Device
+): Map<String, Device> => devices.set(deviceId, device);
