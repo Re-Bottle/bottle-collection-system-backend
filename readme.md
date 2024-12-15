@@ -20,6 +20,10 @@ Follow the instructions at [AWS Docs](https://docs.aws.amazon.com/cli/latest/use
 
 `aws dynamodb create-table --table-name Vendors --attribute-definitions AttributeName=id,AttributeType=S AttributeName=email,AttributeType=S --key-schema AttributeName=id,KeyType=HASH --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 --global-secondary-indexes '[{"IndexName": "EmailIndex", "KeySchema": [{"AttributeName": "email", "KeyType": "HASH"}], "Projection": {"ProjectionType": "ALL"}, "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5}}]' --endpoint-url http://localhost:8000`
 
+### Create Devices Table
+
+`aws dynamodb create-table --table-name Devices --attribute-definitions AttributeName=deviceId,AttributeType=S --key-schema AttributeName=deviceId,KeyType=HASH --billing-mode PAY_PER_REQUEST --endpoint-url http://localhost:8000`
+
 ### List Tables
 
 `aws dynamodb list-tables --endpoint-url http://localhost:8000`
