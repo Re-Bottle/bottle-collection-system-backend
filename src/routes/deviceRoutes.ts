@@ -56,7 +56,6 @@ const IOT_POLICY_NAME = process.env.IOT_POLICY_NAME || "IoTDevicePolicy";
  */
 router.post("/register", async (req: Request, res: Response): Promise<any> => {
   const { device_id, mac_address } = req.body;
-
   if (!mac_address) {
     return res.status(400).json({ message: "MAC address is required" });
   }
@@ -125,6 +124,9 @@ router.post("/register", async (req: Request, res: Response): Promise<any> => {
         certificatePem: keysAndCert.certificatePem,
         privateKey: keysAndCert.keyPair?.PrivateKey,
       },
+      ownerID: null,
+      whenClaimed: null,
+      registrationStatus: "Unregistered"
     });
   } catch (error) {
     console.error("Error provisioning device:", error);
