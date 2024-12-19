@@ -27,3 +27,7 @@ Follow the instructions at [AWS Docs](https://docs.aws.amazon.com/cli/latest/use
 ### List Tables
 
 `aws dynamodb list-tables --endpoint-url http://localhost:8000`
+
+### Delete Tables
+
+`aws dynamodb delete-table --table-name Users --endpoint-url http://localhost:8000`

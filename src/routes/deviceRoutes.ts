@@ -65,7 +65,7 @@ router.post("/register", async (req: Request, res: Response): Promise<any> => {
     // Step 1: Check if the device already exists in DynamoDB
     const getParams = {
       TableName: DEVICES_TABLE,
-      Key: { device_id },
+      Key: { deviceId:device_id },
     };
 
     const device = await docClient.send(new GetCommand(getParams));
@@ -107,7 +107,7 @@ router.post("/register", async (req: Request, res: Response): Promise<any> => {
     const putParams = {
       TableName: DEVICES_TABLE,
       Item: {
-        device_id,
+        deviceId:device_id,
         mac_address,
         timestamp,
         claimable: true, // claimable
@@ -238,6 +238,28 @@ router.post(
     const devices: Device[] | undefined = findDevicesByVendor(vendorId);
     if (!devices) return res.status(404).json({ message: "No devices found" });
     return res.status(200).json({ devices });
+  }
+);
+
+router.post(
+  "/getDeviceDetails/:deviceId",
+  authenticateJWT,
+  async (req: Request, res: Response): Promise<any> => {
+    const { deviceId } = req.params;
+    const vendorId = req.user?.id; // Vendor ID should still be part of the request body or user info (e.g., via JWT)
+
+    if (!vendorId) return res.status(400).json({ message: "Vendor ID missing" });
+
+    try {
+      const device = findDeviceById(deviceId);
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+
+      return res.status(200).json({ device });
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
   }
 );
 
