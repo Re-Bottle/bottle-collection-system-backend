@@ -7,14 +7,19 @@ export interface User {
 
 export interface Device {
   deviceId: string;
-  deviceName: string | null;
+  macAddress: string;
   vendorId: string | null;
+
+  deviceName: string | null;
   deviceLocation: string | null;
   deviceFillLevel: number;
   deviceDescription: string | null;
-  claimableStatus: boolean;
-  lastActionTimestamp: Date;
   deviceActiveStatus: boolean;
+
+  whenClaimed: Date | null;
+  whenProvisioned: Date | null;
+
+  lastActionTimestamp: Date;
 }
 
 declare global {
