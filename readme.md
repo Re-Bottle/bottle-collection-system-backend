@@ -22,7 +22,15 @@ Follow the instructions at [AWS Docs](https://docs.aws.amazon.com/cli/latest/use
 
 ### Create Devices Table
 
-`aws dynamodb create-table --table-name Devices --attribute-definitions AttributeName=deviceId,AttributeType=S --key-schema AttributeName=deviceId,KeyType=HASH --billing-mode PAY_PER_REQUEST --endpoint-url http://localhost:8000`
+`aws dynamodb create-table  --table-name Devices  --attribute-definitions      AttributeName=deviceId,AttributeType=S      AttributeName=vendorId,AttributeType=S  --key-schema      AttributeName=deviceId,KeyType=HASH  --billing-mode PAY_PER_REQUEST  --endpoint-url http://localhost:8000  --global-secondary-indexes '[{"IndexName": "VendorIdIndex", "KeySchema": [{"AttributeName": "vendorId", "KeyType": "HASH"} ], "Projection": {"ProjectionType": "ALL"}, "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5}}]'`
+
+### Create Scans Table
+
+`aws dynamodb create-table --table-name Scans --attribute-definitions AttributeName=code,AttributeType=S AttributeName=deviceId,AttributeType=S AttributeName=createdOn,AttributeType=N AttributeName=claimedOn,AttributeType=N AttributeName=claimedBy,AttributeType=S AttributeName=bottleType,AttributeType=S --key-schema AttributeName=code,KeyType=HASH --billing-mode PAY_PER_REQUEST --endpoint-url http://localhost:8000`
+
+### Create Rewards Table
+
+`aws dynamodb create-table --table-name Rewards --attribute-definitions AttributeName=_id,AttributeType=S AttributeName=rewardName,AttributeType=S AttributeName=rewardDescription,AttributeType=S AttributeName=rewardCost,AttributeType=N AttributeName=validSince,AttributeType=N AttributeName=validUntil,AttributeType=N --key-schema AttributeName=_id,KeyType=HASH --billing-mode PAY_PER_REQUEST --endpoint-url http://localhost:8000`
 
 ### List Tables
 

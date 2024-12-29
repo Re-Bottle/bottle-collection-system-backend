@@ -1,0 +1,61 @@
+{
+  "Parameters": {
+    "ThingName": {
+      "Type": "String"
+    },
+    "SerialNumber": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "certificate": {
+      "Type": "AWS::IoT::Certificate",
+      "Properties": {
+        "CertificateId": {
+          "Ref": "AWS::IoT::Certificate::Id"
+        },
+        "Status": "ACTIVE"
+      }
+    },
+    "thing": {
+      "Type": "AWS::IoT::Thing",
+      "Properties": {
+        "ThingName": {
+          "Ref": "ThingName"
+        },
+        "AttributePayload": {
+          "Attributes": {
+            "SerialNumber": {
+              "Ref": "SerialNumber"
+            }
+          }
+        }
+      }
+    },
+    "policy": {
+      "Type": "AWS::IoT::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["iot:Connect"],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": ["iot:Publish"],
+              "Resource": "arn:aws:iot:ap-south-1:256532950964:topic/test/topic"
+            },
+            {
+              "Effect": "Allow",
+              "Action": ["iot:Subscribe", "iot:Receive"],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

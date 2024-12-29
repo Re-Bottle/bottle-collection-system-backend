@@ -60,7 +60,6 @@ router.post("/loginVendor", (req, res) => __awaiter(void 0, void 0, void 0, func
         const token = jsonwebtoken_1.default.sign({ id: user.id, email }, SECRET_KEY, {
             expiresIn: "1h",
         });
-        console.log("token while login: ", token);
         // Set the token as a cookie
         res.cookie("auth_token", token, {
         // httpOnly: true,

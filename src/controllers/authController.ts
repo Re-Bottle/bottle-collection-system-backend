@@ -4,6 +4,8 @@ import {
   GetItemCommand,
   PutItemCommand,
   QueryCommand,
+  ReturnValue,
+  UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
@@ -37,7 +39,7 @@ export const createVendor = async (
 
   const params = {
     TableName: VENDORS_TABLE,
-    Item: marshall(newUser),
+    Item: marshall(newUser, { removeUndefinedValues: true }),
   };
 
   await dynamoDb.send(new PutItemCommand(params));
@@ -118,4 +120,28 @@ export const findUserById = async (id: string): Promise<User | undefined> => {
 
   const result = await dynamoDb.send(new GetItemCommand(params));
   return result.Item ? (unmarshall(result.Item) as User) : undefined;
+};
+
+// Update user password by ID
+export const updateUserPassword = async (
+  id: string,
+  newPassword: string
+): Promise<User | undefined> => {
+  const params = {
+    TableName: USERS_TABLE,
+    Key: marshall({ id }),
+    UpdateExpression: "SET #password = :newPassword",
+    ExpressionAttributeNames: {
+      "#password": "password",
+    },
+    ExpressionAttributeValues: marshall({
+      ":newPassword": newPassword,
+    }),
+    ReturnValues: ReturnValue.ALL_NEW,
+  };
+
+  const result = await dynamoDb.send(new UpdateItemCommand(params));
+  return result.Attributes
+    ? (unmarshall(result.Attributes) as User)
+    : undefined;
 };

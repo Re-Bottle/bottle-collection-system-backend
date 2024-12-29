@@ -7,6 +7,7 @@ import {
   findUserByEmail,
   findVendorByEmail,
   createVendor,
+  updateUserPassword,
 } from "../controllers/authController";
 import { authenticateJWT } from "../utils/authUtils";
 
@@ -68,8 +69,6 @@ router.post(
       const token = jwt.sign({ id: user.id, email }, SECRET_KEY, {
         expiresIn: "1h",
       });
-
-      console.log("token while login: ", token);
 
       // Set the token as a cookie
       res.cookie("auth_token", token, {
@@ -164,25 +163,83 @@ router.post("/logout", async (req: Request, res: Response): Promise<any> => {
   return res.json({ message: "Logged out successfully" });
 });
 
-// // Get User Details
-router.get(
-  "/user",
-  authenticateJWT,
+// Request Password Reset (Forgot Password)
+router.post(
+  "/forgotPassword",
   async (req: Request, res: Response): Promise<any> => {
-    if (req.user == undefined) {
-      return res.status(404).json({ message: "User details missing" });
-    }
     try {
-      const userId = req.user.id; // Assuming user ID is stored in req.user by middleware
-      const user = findUserById(userId);
+      const { email } = req.body;
 
+      // Find the user by email
+      const user = await findUserByEmail(email);
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(400).json({ message: "User not found" });
       }
-      return res.json({ user });
+
+      // Generate a password reset token (JWT or a custom token)
+      const resetToken = jwt.sign({ email }, SECRET_KEY, { expiresIn: "15m" });
+
+      // Send the reset token to the user's email (integrate with an email service here?)
+      return res.json({
+        message: "Password reset token sent",
+        resetToken: resetToken,
+      });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Server error" });
+      return res.status(500).json({ message: "Server error" });
+    }
+  }
+);
+
+// Reset Password
+router.post(
+  "/resetPassword",
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { resetToken, newPassword } = req.body;
+
+      // Verify the reset token
+      let decoded: any;
+      try {
+        decoded = jwt.verify(resetToken, SECRET_KEY);
+      } catch (error) {
+        return res
+          .status(400)
+          .json({ message: "Invalid or expired reset token" });
+      }
+
+      // Find the user by email from the token
+      const user = await findUserByEmail(decoded.email);
+      if (user) {
+        // Update user password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const updatedUser = await updateUserPassword(user.id, hashedPassword);
+        if (updatedUser) {
+          return res.json({
+            message: "Password successfully updated for user",
+          });
+        } else {
+          return res
+            .status(500)
+            .json({ message: "Failed to update user password" });
+        }
+      }
+
+      // const vendor = await findVendorByEmail(decoded.email);
+      // if (vendor) {
+      //   // Update vendor password
+      //   const updatedVendor = await updateVendorPassword(vendor.id, newPassword);
+      //   if (updatedVendor) {
+      //     return res.json({ message: "Password successfully updated for vendor" });
+      //   } else {
+      //     return res.status(500).json({ message: "Failed to update vendor password" });
+      //   }
+      // }
+
+      return res.status(400).json({ message: "User not found" });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Server error" });
     }
   }
 );
