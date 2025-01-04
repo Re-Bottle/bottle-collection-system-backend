@@ -2,10 +2,10 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
-import authRoutes from "./routes/authRoutes"; // Adjust the path based on your directory structure
-import deviceRoutes from "./routes/deviceRoutes";
-import rewardRoutes from "./routes/rewardRoutes";
-import { authenticateJWT } from "./utils/authUtils";
+import authRoutes from "./routes/authRoutes.ts"; // Adjust the path based on your directory structure
+import deviceRoutes from "./routes/deviceRoutes.ts";
+import rewardRoutes from "./routes/rewardRoutes.ts";
+import { authenticateJWT } from "./utils/authUtils.ts";
 
 const app = express();
 
@@ -44,3 +44,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+export default app;

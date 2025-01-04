@@ -4,14 +4,13 @@ import {
   authenticateJWT,
   validateDevice,
   validateDeviceClaim,
-} from "../utils/authUtils";
+} from "../utils/authUtils.ts";
 import {
   claimDevice,
   findDeviceById,
   findDevicesByVendor,
   registerDevice,
-} from "../controllers/deviceController";
-import { Device } from "../types/express";
+} from "../controllers/deviceController.ts";
 
 const router = Router();
 

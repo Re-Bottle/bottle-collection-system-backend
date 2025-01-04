@@ -8,8 +8,8 @@ import {
   findVendorByEmail,
   createVendor,
   updateUserPassword,
-} from "../controllers/authController";
-import { authenticateJWT } from "../utils/authUtils";
+} from "../controllers/authController.ts";
+import { authenticateJWT } from "../utils/authUtils.ts";
 
 const router = Router();
 const SECRET_KEY =

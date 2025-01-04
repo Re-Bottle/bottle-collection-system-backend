@@ -1,6 +1,6 @@
 import { Response, NextFunction, Request } from "express";
 import jwt from "jsonwebtoken";
-import { User } from "../types/express";
+import type { User } from "../types/express.d.ts";
 
 export const authenticateJWT = (
   req: Request,
