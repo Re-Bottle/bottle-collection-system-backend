@@ -36,15 +36,8 @@ router.post("/claimDevice", authenticateJWT, validateDeviceClaim, claimDevice);
 // Add Scanned Bottle
 router.post("/createScan", createScan);
 
-router.post(
-  "/getDevices",
-  authenticateJWT,
-  getDevices);
+router.post("/getDevices", authenticateJWT, getDevices);
 
-router.post(
-  "/getDeviceDetails/:deviceId",
-  authenticateJWT,
-  getDeviceDetails
-);
+router.post("/getDeviceDetails/:deviceId", authenticateJWT, getDeviceDetails);
 
 export default router;
