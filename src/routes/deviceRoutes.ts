@@ -1,5 +1,4 @@
-import { Router, Request, Response } from "express";
-import { UpdateCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { Router } from "express";
 import {
   authenticateJWT,
   validateDevice,
@@ -7,8 +6,9 @@ import {
 } from "../utils/authUtils.ts";
 import {
   claimDevice,
-  findDeviceById,
-  findDevicesByVendor,
+  createScan,
+  getDeviceDetails,
+  getDevices,
   registerDevice,
 } from "../controllers/deviceController.ts";
 
@@ -34,49 +34,17 @@ router.post("/register", validateDevice, registerDevice);
 router.post("/claimDevice", authenticateJWT, validateDeviceClaim, claimDevice);
 
 // Add Scanned Bottle
-router.post(
-  "/createScan",
-  async (req: Request, res: Response): Promise<any> => {
-    // TODO: Implement Function
-    throw new Error("Unimplemented Function");
-  }
-);
+router.post("/createScan", createScan);
 
 router.post(
   "/getDevices",
   authenticateJWT,
-  async (req: Request, res: Response): Promise<any> => {
-    const vendorId = req.body.vendorId;
-    if (!vendorId)
-      return res.status(400).json({ message: "Vendor ID missing" });
-    const devices = await findDevicesByVendor(vendorId);
-    // const devices: Device[] | undefined = await findDevicesByVendor(vendorId);
-    if (!devices) return res.status(404).json({ message: "No devices found" });
-    return res.status(200).json({ devices });
-  }
-);
+  getDevices);
 
 router.post(
   "/getDeviceDetails/:deviceId",
   authenticateJWT,
-  async (req: Request, res: Response): Promise<any> => {
-    const { deviceId } = req.params;
-    const vendorId = req.user?.id; // Vendor ID should still be part of the request body or user info (e.g., via JWT)
-
-    if (!vendorId)
-      return res.status(400).json({ message: "Vendor ID missing" });
-
-    try {
-      const device = findDeviceById(deviceId);
-      if (!device) {
-        return res.status(404).json({ message: "Device not found" });
-      }
-
-      return res.status(200).json({ device });
-    } catch (error) {
-      return res.status(500).json({ message: "Server error" });
-    }
-  }
+  getDeviceDetails
 );
 
 export default router;
