@@ -6,9 +6,9 @@
   "scripts": {
     "start": "ts-node-dev --respawn src/index.ts --transpileOnly",
     "build": "tsc",
-    "dev": "ts-node-dev src/index.ts",
+    "dev": "nodemon --exec node --loader ts-node/esm src/index.ts",
     "test": "npx mocha --exit",
-    "build_and_run":"npx tsc && node dist/src/index.js"
+    "build_and_run": "npx tsc && node dist/src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -24,8 +24,7 @@
     "cors": "^2.8.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
-    "mqtt": "^5.10.3",
-    "ts-node-dev": "^2.0.0"
+    "mqtt": "^5.10.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -40,6 +39,7 @@
     "chai": "^5.1.2",
     "chai-http": "^5.1.1",
     "mocha": "^11.0.1",
+    "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2"
   }
