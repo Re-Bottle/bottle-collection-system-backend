@@ -3,14 +3,14 @@ import {
   authenticateJWT,
   validateDevice,
   validateDeviceClaim,
-} from "../utils/authUtils.ts";
+} from "../utils/authUtils.js";
 import {
   claimDevice,
   createScan,
   getDeviceDetails,
   getDevices,
   registerDevice,
-} from "../controllers/deviceController.ts";
+} from "../controllers/deviceController.js";
 
 const router = Router();
 

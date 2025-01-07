@@ -12,8 +12,10 @@ import {
   forgotPassword,
   resetPassword,
   getUser,
-} from "../controllers/authController.ts";
-import { authenticateJWT } from "../utils/authUtils.ts";
+  deleteUser,
+  userRequestValidator,
+} from "../controllers/authController.js";
+import { authenticateJWT } from "../utils/authUtils.js";
 
 const router = Router();
 
@@ -39,6 +41,8 @@ router.post("/forgotPassword", forgotPassword);
 router.post("/resetPassword", resetPassword);
 
 // Update User Details
-router.post("/user", authenticateJWT, getUser);
+router.post("/user", authenticateJWT, userRequestValidator, getUser);
+
+router.post("/deleteUser", authenticateJWT, userRequestValidator, deleteUser);
 
 export default router;

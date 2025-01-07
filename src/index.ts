@@ -1,11 +1,12 @@
+
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
-import authRoutes from "./routes/authRoutes.ts"; // Adjust the path based on your directory structure
-import deviceRoutes from "./routes/deviceRoutes.ts";
-import rewardRoutes from "./routes/rewardRoutes.ts";
-import { authenticateJWT } from "./utils/authUtils.ts";
+import authRoutes from "./routes/authRoutes.js"; // Adjust the path based on your directory structure
+import deviceRoutes from "./routes/deviceRoutes.js";
+import rewardRoutes from "./routes/rewardRoutes.js";
+import { authenticateJWT } from "./utils/authUtils.js";
 
 const app = express();
 

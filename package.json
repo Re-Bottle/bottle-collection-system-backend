@@ -7,7 +7,8 @@
     "start": "ts-node-dev --respawn src/index.ts --transpileOnly",
     "build": "tsc",
     "dev": "ts-node-dev src/index.ts",
-    "test": "npx mocha --exit"
+    "test": "npx mocha --exit",
+    "build_and_run":"npx tsc && node dist/src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -23,7 +24,8 @@
     "cors": "^2.8.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
-    "mqtt": "^5.10.3"
+    "mqtt": "^5.10.3",
+    "ts-node-dev": "^2.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
