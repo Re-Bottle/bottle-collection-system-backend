@@ -11,7 +11,7 @@ import {
   logoutUser,
   forgotPassword,
   resetPassword,
-  getUser,
+  updateUser,
   deleteUser,
   userRequestValidator,
 } from "../controllers/authController.js";
@@ -41,8 +41,8 @@ router.post("/forgotPassword", forgotPassword);
 router.post("/resetPassword", resetPassword);
 
 // Update User Details
-router.post("/user", authenticateJWT, userRequestValidator, getUser);
+router.post("/user", authenticateJWT, userRequestValidator, updateUser);
 
-router.post("/deleteUser", authenticateJWT, userRequestValidator, deleteUser);
+router.post("/deleteUser", authenticateJWT, deleteUser);
 
 export default router;

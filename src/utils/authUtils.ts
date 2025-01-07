@@ -1,5 +1,5 @@
 import { Response, NextFunction, Request } from "express";
-import * as jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import type { User } from "../types/express.d.ts";
 
 const SECRET_KEY =
@@ -18,14 +18,12 @@ export const authenticateJWT = (
     return;
   }
 
-  validateToken(token, 
-    (err: jwt.VerifyErrors | null, decoded: any) => {
-      if (err)
-        return res.status(403).json({ message: "Invalid or expired token" });
-      req.user = decoded as User; // Ensure decoded is typed as User
-      next();
-    }
-  );
+  validateToken(token, (err: jwt.VerifyErrors | null, decoded: any) => {
+    if (err)
+      return res.status(403).json({ message: "Invalid or expired token" });
+    req.user = decoded as User; // Ensure decoded is typed as User
+    next();
+  });
 };
 
 export const validateDevice = (
@@ -64,12 +62,16 @@ export const createSignedToken = (user: User, email: string): string =>
     expiresIn: "1h",
   });
 
-export const createResetToken = (email: string): string => jwt.sign({ email }, SECRET_KEY, { expiresIn: "15m" });
+export const createResetToken = (email: string): string =>
+  jwt.sign({ email }, SECRET_KEY, { expiresIn: "15m" });
 
-export const validateToken = (token: string, callback: (err: jwt.VerifyErrors | null, decoded: any) => void): any => {
+export const validateToken = (
+  token: string,
+  callback: (err: jwt.VerifyErrors | null, decoded: any) => void
+): any => {
   try {
     return jwt.verify(token, SECRET_KEY, callback);
   } catch (error) {
     return null;
   }
-}
+};

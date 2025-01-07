@@ -39,3 +39,11 @@ Follow the instructions at [AWS Docs](https://docs.aws.amazon.com/cli/latest/use
 ### Delete Tables
 
 `aws dynamodb delete-table --table-name Users --endpoint-url http://localhost:8000`
+
+### Display Data
+
+`aws dynamodb scan --table-name users --endpoint-url http://localhost:8000`
+
+### Delete Data
+
+`aws dynamodb delete-item --table-name Users --key '{"id":{"S":"1"}}' --endpoint-url http://localhost:8000`

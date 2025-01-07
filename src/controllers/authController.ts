@@ -1,14 +1,22 @@
 import { NextFunction, Request, Response } from "express";
-import * as bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs";
 import { VerifyErrors } from "jsonwebtoken";
 
 import DynamoDB from "../repository/dynamoDB.js";
-import { createResetToken, createSignedToken, validateToken } from "../utils/authUtils.js";
+import {
+  createResetToken,
+  createSignedToken,
+  validateToken,
+} from "../utils/authUtils.js";
+import RepositoryInterface from "../repository/repositoryInterface.js";
 
-const repository = DynamoDB.getInstance();
+const repository: RepositoryInterface = DynamoDB.getInstance();
 
-
-export const signupVendorRequestValidator = (req: Request, res: Response, next: NextFunction): any => {
+export const signupVendorRequestValidator = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): any => {
   let { email, password, name } = req.body;
 
   email = email?.trim();
@@ -16,17 +24,22 @@ export const signupVendorRequestValidator = (req: Request, res: Response, next: 
   name = name?.trim();
 
   if (!email || !password || !name) {
-    return res.status(400).json({ error: 'Missing required fields: email, password, and name' });
+    return res
+      .status(400)
+      .json({ error: "Missing required fields: email, password, and name" });
   }
 
   if (email.length === 0 || password.length === 0 || name.length === 0) {
-    return res.status(400).json({ error: 'Fields cannot be empty' });
+    return res.status(400).json({ error: "Fields cannot be empty" });
   }
 
   next();
-}
+};
 
-export const signupVendor = async (req: Request, res: Response): Promise<any> => {
+export const signupVendor = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { email, password, name } = req.body;
 
@@ -49,27 +62,35 @@ export const signupVendor = async (req: Request, res: Response): Promise<any> =>
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }
-}
+};
 
-export const loginVendorRequestValidator = (req: Request, res: Response, next: NextFunction): any => {
+export const loginVendorRequestValidator = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): any => {
   let { email, password } = req.body;
 
   email = email?.trim();
   password = password?.trim();
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Missing required fields: email and password' });
+    return res
+      .status(400)
+      .json({ error: "Missing required fields: email and password" });
   }
 
   if (email.length === 0 || password.length === 0) {
-    return res.status(400).json({ error: 'Fields cannot be empty' });
+    return res.status(400).json({ error: "Fields cannot be empty" });
   }
 
   next();
+};
 
-}
-
-export const loginVendor = async (req: Request, res: Response): Promise<any> => {
+export const loginVendor = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { email, password } = req.body;
 
@@ -107,7 +128,11 @@ export const loginVendor = async (req: Request, res: Response): Promise<any> => 
   }
 };
 
-export const signupUserRequestValidator = (req: Request, res: Response, next: NextFunction): any => {
+export const signupUserRequestValidator = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): any => {
   let { email, password, name } = req.body;
 
   email = email?.trim();
@@ -115,15 +140,17 @@ export const signupUserRequestValidator = (req: Request, res: Response, next: Ne
   name = name?.trim();
 
   if (!email || !password || !name) {
-    return res.status(400).json({ error: 'Missing required fields: email, password, and name' });
+    return res
+      .status(400)
+      .json({ error: "Missing required fields: email, password, and name" });
   }
 
   if (email.length === 0 || password.length === 0 || name.length === 0) {
-    return res.status(400).json({ error: 'Fields cannot be empty' });
+    return res.status(400).json({ error: "Fields cannot be empty" });
   }
 
   next();
-}
+};
 
 export const loginUser = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -161,29 +188,35 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }
-}
+};
 
-export const loginUserRequestValidator = (req: Request, res: Response, next: NextFunction): any => {
+export const loginUserRequestValidator = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): any => {
   let { email, password } = req.body;
 
   email = email?.trim();
   password = password?.trim();
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Missing required fields: email and password' });
+    return res
+      .status(400)
+      .json({ error: "Missing required fields: email and password" });
   }
 
   if (email.length === 0 || password.length === 0) {
-    return res.status(400).json({ error: 'Fields cannot be empty' });
+    return res.status(400).json({ error: "Fields cannot be empty" });
   }
 
   next();
-}
+};
 
 export const logoutUser = async (req: Request, res: Response): Promise<any> => {
   res.clearCookie("auth_token");
   return res.json({ message: "Logged out successfully" });
-}
+};
 
 export const signupUser = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -208,9 +241,12 @@ export const signupUser = async (req: Request, res: Response): Promise<any> => {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }
-}
+};
 
-export const forgotPassword = async (req: Request, res: Response): Promise<any> => {
+export const forgotPassword = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { email } = req.body;
 
@@ -219,7 +255,6 @@ export const forgotPassword = async (req: Request, res: Response): Promise<any> 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
-
 
     const resetToken = createResetToken(email);
 
@@ -232,18 +267,28 @@ export const forgotPassword = async (req: Request, res: Response): Promise<any> 
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }
-}
+};
 
-export const resetPassword = async (req: Request, res: Response): Promise<any> => {
+export const resetPassword = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { resetToken, newPassword } = req.body;
 
     // Verify the reset token
     let decoded: any;
     try {
-      decoded = validateToken(resetToken, (err: VerifyErrors | null, decoded: any) => {
-        // TODO: implement callback for password change
-      });
+      decoded = validateToken(
+        resetToken,
+        (err: VerifyErrors | null, decoded: any) => {
+          if (err)
+            return res
+              .status(400)
+              .json({ message: "Invalid or expired reset token" });
+          // TODO: implement callback for password change
+        }
+      );
     } catch (error) {
       return res
         .status(400)
@@ -255,7 +300,10 @@ export const resetPassword = async (req: Request, res: Response): Promise<any> =
     if (user) {
       // Update user password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      const updatedUser = await repository.updateUserPassword(user.id, hashedPassword);
+      const updatedUser = await repository.updateUserPassword(
+        user.id,
+        hashedPassword
+      );
       if (updatedUser) {
         return res.json({
           message: "Password successfully updated for user",
@@ -267,45 +315,47 @@ export const resetPassword = async (req: Request, res: Response): Promise<any> =
       }
     }
 
-    // const vendor = await findVendorByEmail(decoded.email);
-    // if (vendor) {
-    //   // Update vendor password
-    //   const updatedVendor = await updateVendorPassword(vendor.id, newPassword);
-    //   if (updatedVendor) {
-    //     return res.json({ message: "Password successfully updated for vendor" });
-    //   } else {
-    //     return res.status(500).json({ message: "Failed to update vendor password" });
-    //   }
-    // }
-
     return res.status(400).json({ message: "User not found" });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-export const getUser = async (req: Request, res: Response): Promise<any> => {
-  const { id } = req.body;
-  return await repository.findUserById(id);
-}
+export const updateUser = async (req: Request, res: Response): Promise<any> => {
+  const { id, name } = req.body;
+  return await repository.updateUserName(id, name);
+};
 
-export const userRequestValidator = (req: Request, res: Response, next: NextFunction): any => {
-  let { id } = req.body;
+export const userRequestValidator = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): any => {
+  let { id, name } = req.body;
 
   id = id?.trim();
+  name = name?.trim();
 
-  if (!id) {
-    return res.status(400).json({ error: 'Missing required field: id' });
+  if (!id || !name) {
+    return res
+      .status(400)
+      .json({ error: "Missing required field: id or name" });
   }
 
-  if (id.length === 0) {
-    return res.status(400).json({ error: 'Field cannot be empty' });
+  if (id.length === 0 || name.length === 0) {
+    return res.status(400).json({ error: "Field cannot be empty" });
   }
 
   next();
-}
+};
 
 export const deleteUser = async (req: Request, res: Response): Promise<any> => {
-  throw new Error("Not implemented");
-}
+  const { id } = req.body;
+  const result = await repository.deleteUser(id);
+  if (result) {
+    return res.json({ message: "User deleted successfully" });
+  } else {
+    return res.status(500).json({ message: "Failed to delete user" });
+  }
+};
