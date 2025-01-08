@@ -7,13 +7,16 @@ import {
   ReturnValue,
   UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
-import type { User } from "../types/express.js";
+import type { Device, User } from "../types/express.js";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
 import RepositoryInterface from "./repositoryInterface.js";
+import { GetCommand, GetCommandOutput, PutCommand, PutCommandOutput, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
 const USERS_TABLE = "Users";
 const VENDORS_TABLE = "Vendors";
+const DEVICES_TABLE = "Devices";
+
 
 export default class DynamoDB implements RepositoryInterface {
   private static instance: DynamoDB;
@@ -25,6 +28,8 @@ export default class DynamoDB implements RepositoryInterface {
       endpoint: "http://localhost:8000",
     });
   }
+
+
 
   public static getInstance(): DynamoDB {
     if (!DynamoDB.instance) {
@@ -181,5 +186,182 @@ export default class DynamoDB implements RepositoryInterface {
       console.error(error);
       return false;
     }
+  }
+
+  async registerDevice(deviceId: string, vendorId: string, deviceName: string, deviceLocation: string, deviceDescription: string): Promise<any> {
+    const timestamp = new Date().toISOString();
+    const updateParams = {
+      TableName: DEVICES_TABLE,
+      Key: {
+        deviceId, // The partition key of the item
+      },
+      UpdateExpression: `
+      SET
+        vendorId = :vendorId,
+        deviceName = :deviceName,
+        deviceLocation = :deviceLocation,
+        deviceDescription = :deviceDescription,
+        deviceActiveStatus = :deviceActiveStatus,
+        whenClaimed = :whenClaimed,
+        lastActionTimestamp = :lastActionTimestamp
+    `,
+      ExpressionAttributeValues: {
+        ":vendorId": vendorId,
+        ":deviceName": deviceName,
+        ":deviceLocation": deviceLocation,
+        ":deviceDescription": deviceDescription,
+        ":deviceActiveStatus": false, // Default value
+        ":whenClaimed": timestamp,
+        ":lastActionTimestamp": timestamp,
+      },
+      ReturnValues: ReturnValue.ALL_NEW,
+    };
+    const data = await this.client.send(new UpdateCommand(updateParams));
+    return data.Attributes;
+  }
+
+  async findDevicesByVendor(vendorId: string): Promise<Device[] | undefined> {
+    const params = {
+      TableName: DEVICES_TABLE,
+      IndexName: "VendorIdIndex",
+      KeyConditionExpression: "#vendorId = :vendorId",
+      ExpressionAttributeNames: { "#vendorId": "vendorId" },
+      ExpressionAttributeValues: marshall({ ":vendorId": vendorId }),
+    };
+    const result = await this.client.send(new QueryCommand(params));
+    // return result.Items?.[0]
+    //   ? (unmarshall(result.Items[0]) as Device)
+    //   : undefined;
+    return result.Items?.length
+      ? result.Items.map((item) => unmarshall(item) as Device)
+      : undefined;
+  }
+
+  async findDeviceById(deviceId: string): Promise<Device | undefined> {
+    const getParams = {
+      TableName: DEVICES_TABLE,
+      Key: { deviceId },
+    };
+
+    // Getting Device Data from DynamoDB
+    return DynamoDButils.getDeviceResultMapper(await this.client.send(new GetCommand(getParams)));
+  };
+
+  async createDevice(deviceId: string, macAddress: string): Promise<void> {
+    const timestamp = new Date().toISOString();
+    const putParams = {
+      TableName: DEVICES_TABLE,
+      Item: {
+        deviceId,
+        macAddress,
+        vendorId: "Unclaimed",
+  
+        deviceName: null,
+        deviceLocation: null,
+        deviceFillLevel: 0,
+        deviceDescription: null,
+        deviceActiveStatus: false,
+  
+        whenClaimed: null,
+        whenProvisioned: null,
+  
+        lastActionTimestamp: timestamp,
+      },
+    };
+    await this.client.send(new PutCommand(putParams));
+  };
+
+  async getDevice(deviceId: string): Promise<Device | undefined> {
+    {
+      const getParams = {
+        TableName: DEVICES_TABLE,
+        Key: { deviceId },
+      };
+    
+      // Getting Device Data from DynamoDB
+      return DynamoDButils.getDeviceResultMapper(await this.client.send(new GetCommand(getParams)));
+    };
+  }
+  async updateDeviceTimestamp(deviceId: string, wasProvisioned: Boolean = false): Promise<Device> {
+    const timestamp = new Date().toISOString();
+    let updateParams = {
+      TableName: DEVICES_TABLE,
+      Key: { deviceId },
+      UpdateExpression: "set #ts = :timestamp", // Use #ts as a placeholder for 'timestamp'
+      ExpressionAttributeNames: {
+        "#ts": "timestamp",
+      },
+      ExpressionAttributeValues: {
+        ":timestamp": timestamp,
+      },
+      ReturnValues: ReturnValue.ALL_NEW,
+    };
+  
+    if (wasProvisioned) {
+      updateParams = {
+        ...updateParams,
+        UpdateExpression: "set #ts = :timestamp, whenProvisioned = :timestamp",
+        ExpressionAttributeNames: {
+          ...updateParams.ExpressionAttributeNames,
+        },
+      };
+    }
+  
+    return DynamoDButils.putDeviceResultMapper(
+      await this.client.send(new UpdateCommand(updateParams))
+    );
+  }
+
+}
+
+class DynamoDButils {
+  static getDeviceResultMapper(result: GetCommandOutput): Device | undefined {
+    return result.Item?.deviceId
+      ? {
+        deviceId: result.Item?.deviceId || "",
+        macAddress: result.Item?.macAddress || "",
+        vendorId: result.Item?.vendorId || null,
+        deviceName: result.Item?.deviceName || null,
+        deviceLocation: result.Item?.deviceLocation || null,
+        deviceFillLevel: result.Item?.deviceFillLevel || 0,
+        deviceDescription: result.Item?.deviceDescription || null,
+        deviceActiveStatus: result.Item?.deviceActiveStatus || false,
+        whenClaimed: result.Item?.whenClaimed || null,
+        whenProvisioned: result.Item?.whenProvisioned || null,
+        lastActionTimestamp: result.Item?.lastActionTimestamp || new Date(),
+      }
+      : undefined;
+
+  }
+  static putDeviceResultMapper(result: PutCommandOutput): Device {
+    return ({
+      deviceId: result.Attributes?.deviceId || "",
+      macAddress: result.Attributes?.macAddress || "",
+      vendorId: result.Attributes?.vendorId || null,
+      deviceName: result.Attributes?.deviceName || null,
+      deviceLocation: result.Attributes?.deviceLocation || null,
+      deviceFillLevel: result.Attributes?.deviceFillLevel || 0,
+      deviceDescription: result.Attributes?.deviceDescription || null,
+      deviceActiveStatus: result.Attributes?.deviceActiveStatus || false,
+      whenClaimed: result.Attributes?.whenClaimed || null,
+      whenProvisioned: result.Attributes?.whenProvisioned || null,
+      lastActionTimestamp: result.Attributes?.lastActionTimestamp || new Date(),
+    });
+  }
+
+  static getDevicesResultMapper(result: any): Device {
+    return ({
+      deviceId: result.deviceId || "",
+      macAddress: result.macAddress || "",
+      vendorId: result.vendorId || null,
+      deviceName: result.deviceName || null,
+      deviceLocation: result.deviceLocation || null,
+      deviceFillLevel: result.deviceFillLevel || 0,
+      deviceDescription: result.deviceDescription || null,
+      deviceActiveStatus: result.deviceActiveStatus || false,
+      whenClaimed: result.whenClaimed || null,
+      whenProvisioned: result.whenProvisioned || null,
+      lastActionTimestamp: result.lastActionTimestamp || new Date(),
+    });
   }
 }

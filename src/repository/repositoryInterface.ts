@@ -1,6 +1,7 @@
-import { User } from "../types/express.js";
+import { Device, User } from "../types/express.js";
 
 export default abstract class RepositoryInterface {
+  // Vendor Table Actions
   abstract findVendorByEmail(email: string): Promise<User | undefined>;
   abstract findVendorById(id: string): Promise<User | undefined>;
   abstract createVendor(
@@ -9,6 +10,7 @@ export default abstract class RepositoryInterface {
     name: string
   ): Promise<User>;
 
+  // User Table Actions
   abstract findUserByEmail(email: string): Promise<User | undefined>;
   abstract findUserById(id: string): Promise<User | undefined>;
   abstract createUser(
@@ -22,4 +24,18 @@ export default abstract class RepositoryInterface {
   ): Promise<User | undefined>;
   abstract updateUserName(id: string, name: string): Promise<User | undefined>;
   abstract deleteUser(id: string): Promise<boolean>;
+
+  // Device Table Actions
+  abstract createDevice(deviceId: string, macAddress: string): Promise<void>;
+  abstract registerDevice(
+    deviceId: string,
+    vendorId: string,
+    deviceName: string,
+    deviceLocation: string,
+    deviceDescription: string
+  ): Promise<any>;
+  abstract getDevice(deviceId: string):Promise<Device | undefined>;
+  abstract findDevicesByVendor(vendorId: string): Promise<Device[] | undefined>;
+  abstract findDeviceById(deviceId: string): Promise<Device | undefined>;
+  abstract updateDeviceTimestamp(deviceId: string, wasProvisioned: Boolean): Promise<Device>;
 }

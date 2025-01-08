@@ -1,26 +1,14 @@
 import { NextFunction, Request, Response } from "express";
 import type { Device } from "../types/express.d.ts";
 import {
-  DynamoDBDocumentClient,
-  GetCommand,
-  GetCommandOutput,
-  PutCommand,
-  PutCommandOutput,
-  UpdateCommand,
-} from "@aws-sdk/lib-dynamodb";
-import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
-import {
   AttachThingPrincipalCommand,
   CreateKeysAndCertificateCommand,
   CreateKeysAndCertificateCommandOutput,
   CreateThingCommand,
   IoTClient,
 } from "@aws-sdk/client-iot";
-import {
-  DynamoDBClient,
-  QueryCommand,
-  ReturnValue,
-} from "@aws-sdk/client-dynamodb";
+import DynamoDB from "../repository/dynamoDB.js";
+import RepositoryInterface from "../repository/repositoryInterface.js";
 
 const iotClient = new IoTClient({
   region: process.env.AWS_REGION || "ap-south-1",
@@ -34,14 +22,9 @@ const iotClient = new IoTClient({
  * claimable: boolean // true by default
  * owner: string // null by default, userID of the owner after claiming
  */
-const dynamoClient = new DynamoDBClient({
-  region: process.env.AWS_REGION || "ap-south-1",
-  endpoint: "http://localhost:8000", // Local DynamoDB endpoint
-});
 
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
+const repository: RepositoryInterface = DynamoDB.getInstance();
 
-const DEVICES_TABLE = "Devices";
 const IOT_POLICY_NAME = process.env.IOT_POLICY_NAME || "IoTDevicePolicy";
 
 /**
@@ -66,7 +49,7 @@ export const registerDevice = async (
 
   try {
     // Getting Device Data from DynamoDB
-    const device = await getDeviceFromDatabase(deviceId);
+    const device = await repository.getDevice(deviceId);
     if (device) {
       // Condition: Device Exists in Database already
       if (device.whenProvisioned)
@@ -81,7 +64,7 @@ export const registerDevice = async (
       if (device.whenClaimed) {
         // Condition: Device is Registered but not yet provisioned
         const keysAndCertificates = await createThingWithCertificate(deviceId);
-        updatedDevice = await updateDeviceTimestamp(deviceId, true);
+        updatedDevice = await repository.updateDeviceTimestamp(deviceId, true);
         return response.status(201).json({
           message: "Device Provisioned Successfully",
           deviceState: "Provisioned",
@@ -89,7 +72,7 @@ export const registerDevice = async (
           ...keysAndCertificates,
         });
       } else {
-        updatedDevice = await updateDeviceTimestamp(deviceId);
+        updatedDevice = await repository.updateDeviceTimestamp(deviceId, false);
         return response.status(200).json({
           message: "Device already exists. Timestamp updated.",
           deviceState: "Registered",
@@ -98,7 +81,7 @@ export const registerDevice = async (
       }
     } else {
       //Condition: Device is not yet Registered
-      await createNewDeviceEntry(deviceId, macAddress);
+      await repository.createDevice(deviceId, macAddress);
       return response.status(200).json({
         message: "Device Created Successfully",
         deviceState: "Registered",
@@ -121,7 +104,7 @@ export const claimDevice = async (
     request.body;
 
   try {
-    const device = await getDeviceFromDatabase(deviceId);
+    const device = await repository.getDevice(deviceId);
     if (device == null) {
       return response.status(404).json({ message: "Device not found" });
     }
@@ -142,7 +125,7 @@ export const claimDevice = async (
         .status(400)
         .json({ message: "Device registration has expired" });
     }
-    const registeredDevice = registerDeviceInDB(
+    const registeredDevice = repository.registerDevice(
       deviceId,
       vendorId,
       deviceName,
@@ -172,7 +155,7 @@ export const getDevices = async (req: Request, res: Response): Promise<any> => {
   const vendorId = req.body.vendorId;
   if (!vendorId)
     return res.status(400).json({ message: "Vendor ID missing" });
-  const devices = await findDevicesByVendor(vendorId);
+  const devices = await repository.findDevicesByVendor(vendorId);
   // const devices: Device[] | undefined = await findDevicesByVendor(vendorId);
   if (!devices) return res.status(404).json({ message: "No devices found" });
   return res.status(200).json({ devices });
@@ -186,7 +169,7 @@ export const getDeviceDetails =   async (req: Request, res: Response): Promise<a
     return res.status(400).json({ message: "Vendor ID missing" });
 
   try {
-    const device = findDeviceById(deviceId);
+    const device = repository.findDeviceById(deviceId);
     if (!device) {
       return res.status(404).json({ message: "Device not found" });
     }
@@ -196,75 +179,6 @@ export const getDeviceDetails =   async (req: Request, res: Response): Promise<a
     return res.status(500).json({ message: "Server error" });
   }
 }
-
-
-const registerDeviceInDB = async (
-  deviceId: string,
-  vendorId: string,
-  deviceName: string,
-  deviceLocation: string,
-  deviceDescription: string
-) => {
-  const timestamp = new Date().toISOString();
-  const updateParams = {
-    TableName: DEVICES_TABLE,
-    Key: {
-      deviceId, // The partition key of the item
-    },
-    UpdateExpression: `
-    SET
-      vendorId = :vendorId,
-      deviceName = :deviceName,
-      deviceLocation = :deviceLocation,
-      deviceDescription = :deviceDescription,
-      deviceActiveStatus = :deviceActiveStatus,
-      whenClaimed = :whenClaimed,
-      lastActionTimestamp = :lastActionTimestamp
-  `,
-    ExpressionAttributeValues: {
-      ":vendorId": vendorId,
-      ":deviceName": deviceName,
-      ":deviceLocation": deviceLocation,
-      ":deviceDescription": deviceDescription,
-      ":deviceActiveStatus": false, // Default value
-      ":whenClaimed": timestamp,
-      ":lastActionTimestamp": timestamp,
-    },
-    ReturnValues: ReturnValue.ALL_NEW,
-  };
-  const data = await docClient.send(new UpdateCommand(updateParams));
-  return data.Attributes;
-};
-
-export const findDevicesByVendor = async (
-  vendorId: string
-): Promise<Device[] | undefined> => {
-  const params = {
-    TableName: DEVICES_TABLE,
-    IndexName: "VendorIdIndex",
-    KeyConditionExpression: "#vendorId = :vendorId",
-    ExpressionAttributeNames: { "#vendorId": "vendorId" },
-    ExpressionAttributeValues: marshall({ ":vendorId": vendorId }),
-  };
-  const result = await dynamoClient.send(new QueryCommand(params));
-  // return result.Items?.[0]
-  //   ? (unmarshall(result.Items[0]) as Device)
-  //   : undefined;
-  return result.Items?.length
-    ? result.Items.map((item) => unmarshall(item) as Device)
-    : undefined;
-};
-
-export const findDeviceById = async (
-  deviceId: string
-): Promise<Device | undefined> => {
-  const params = {
-    TableName: DEVICES_TABLE,
-    Key: marshall({ deviceId }),
-  };
-  const result = await dynamoClient.send(new GetCommand(params));
-  return result.Item ? (unmarshall(result.Item) as Device) : undefined;
-};
 
 const createThingWithCertificate = async (thingName: string): Promise<any> => {
   try {
@@ -312,116 +226,4 @@ const createThingWithCertificate = async (thingName: string): Promise<any> => {
   }
 };
 
-const getDeviceFromDatabase = async (
-  deviceId: string
-): Promise<Device | null> => {
-  const getParams = {
-    TableName: DEVICES_TABLE,
-    Key: { deviceId },
-  };
 
-  // Getting Device Data from DynamoDB
-  return getDeviceResultMapper(await docClient.send(new GetCommand(getParams)));
-};
-
-const updateDeviceTimestamp = async (
-  deviceId: String,
-  wasProvisioned: Boolean = false
-): Promise<Device> => {
-  const timestamp = new Date().toISOString();
-  let updateParams = {
-    TableName: DEVICES_TABLE,
-    Key: { deviceId },
-    UpdateExpression: "set #ts = :timestamp", // Use #ts as a placeholder for 'timestamp'
-    ExpressionAttributeNames: {
-      "#ts": "timestamp",
-    },
-    ExpressionAttributeValues: {
-      ":timestamp": timestamp,
-    },
-    ReturnValues: ReturnValue.ALL_NEW,
-  };
-
-  if (wasProvisioned) {
-    updateParams = {
-      ...updateParams,
-      UpdateExpression: "set #ts = :timestamp, whenProvisioned = :timestamp",
-      ExpressionAttributeNames: {
-        ...updateParams.ExpressionAttributeNames,
-      },
-    };
-  }
-
-  return putDeviceResultMapper(
-    await docClient.send(new UpdateCommand(updateParams))
-  );
-};
-
-const createNewDeviceEntry = async (deviceId: String, macAddress: String) => {
-  const timestamp = new Date().toISOString();
-  const putParams = {
-    TableName: DEVICES_TABLE,
-    Item: {
-      deviceId,
-      macAddress,
-      vendorId: "Unclaimed",
-
-      deviceName: null,
-      deviceLocation: null,
-      deviceFillLevel: 0,
-      deviceDescription: null,
-      deviceActiveStatus: false,
-
-      whenClaimed: null,
-      whenProvisioned: null,
-
-      lastActionTimestamp: timestamp,
-    },
-  };
-  await docClient.send(new PutCommand(putParams));
-};
-
-const getDeviceResultMapper = (result: GetCommandOutput): Device | null =>
-  result.Item?.deviceId
-    ? {
-        deviceId: result.Item?.deviceId || "",
-        macAddress: result.Item?.macAddress || "",
-        vendorId: result.Item?.vendorId || null,
-        deviceName: result.Item?.deviceName || null,
-        deviceLocation: result.Item?.deviceLocation || null,
-        deviceFillLevel: result.Item?.deviceFillLevel || 0,
-        deviceDescription: result.Item?.deviceDescription || null,
-        deviceActiveStatus: result.Item?.deviceActiveStatus || false,
-        whenClaimed: result.Item?.whenClaimed || null,
-        whenProvisioned: result.Item?.whenProvisioned || null,
-        lastActionTimestamp: result.Item?.lastActionTimestamp || new Date(),
-      }
-    : null;
-
-const putDeviceResultMapper = (result: PutCommandOutput): Device => ({
-  deviceId: result.Attributes?.deviceId || "",
-  macAddress: result.Attributes?.macAddress || "",
-  vendorId: result.Attributes?.vendorId || null,
-  deviceName: result.Attributes?.deviceName || null,
-  deviceLocation: result.Attributes?.deviceLocation || null,
-  deviceFillLevel: result.Attributes?.deviceFillLevel || 0,
-  deviceDescription: result.Attributes?.deviceDescription || null,
-  deviceActiveStatus: result.Attributes?.deviceActiveStatus || false,
-  whenClaimed: result.Attributes?.whenClaimed || null,
-  whenProvisioned: result.Attributes?.whenProvisioned || null,
-  lastActionTimestamp: result.Attributes?.lastActionTimestamp || new Date(),
-});
-
-const getDevicesResultMapper = (result: any): Device => ({
-  deviceId: result.deviceId || "",
-  macAddress: result.macAddress || "",
-  vendorId: result.vendorId || null,
-  deviceName: result.deviceName || null,
-  deviceLocation: result.deviceLocation || null,
-  deviceFillLevel: result.deviceFillLevel || 0,
-  deviceDescription: result.deviceDescription || null,
-  deviceActiveStatus: result.deviceActiveStatus || false,
-  whenClaimed: result.whenClaimed || null,
-  whenProvisioned: result.whenProvisioned || null,
-  lastActionTimestamp: result.lastActionTimestamp || new Date(),
-});
