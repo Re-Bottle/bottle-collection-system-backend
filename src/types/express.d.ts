@@ -19,7 +19,7 @@ export interface Device {
   whenClaimed: Date | null;
   whenProvisioned: Date | null;
 
-  lastActionTimestamp: Date;
+  timestamp: Date;
 }
 
 declare global {

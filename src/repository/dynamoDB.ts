@@ -11,12 +11,17 @@ import type { Device, User } from "../types/express.js";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
 import RepositoryInterface from "./repositoryInterface.js";
-import { GetCommand, GetCommandOutput, PutCommand, PutCommandOutput, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  GetCommand,
+  GetCommandOutput,
+  PutCommand,
+  PutCommandOutput,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 const USERS_TABLE = "Users";
 const VENDORS_TABLE = "Vendors";
 const DEVICES_TABLE = "Devices";
-
 
 export default class DynamoDB implements RepositoryInterface {
   private static instance: DynamoDB;
@@ -186,7 +191,13 @@ export default class DynamoDB implements RepositoryInterface {
     }
   }
 
-  async registerDevice(deviceId: string, vendorId: string, deviceName: string, deviceLocation: string, deviceDescription: string): Promise<any> {
+  async registerDevice(
+    deviceId: string,
+    vendorId: string,
+    deviceName: string,
+    deviceLocation: string,
+    deviceDescription: string
+  ): Promise<any> {
     const timestamp = new Date().toISOString();
     const updateParams = {
       TableName: DEVICES_TABLE,
@@ -201,7 +212,7 @@ export default class DynamoDB implements RepositoryInterface {
         deviceDescription = :deviceDescription,
         deviceActiveStatus = :deviceActiveStatus,
         whenClaimed = :whenClaimed,
-        lastActionTimestamp = :lastActionTimestamp
+        timestamp = :timestamp
     `,
       ExpressionAttributeValues: {
         ":vendorId": vendorId,
@@ -210,7 +221,7 @@ export default class DynamoDB implements RepositoryInterface {
         ":deviceDescription": deviceDescription,
         ":deviceActiveStatus": false, // Default value
         ":whenClaimed": timestamp,
-        ":lastActionTimestamp": timestamp,
+        ":timestamp": timestamp,
       },
       ReturnValues: ReturnValue.ALL_NEW,
     };
@@ -226,13 +237,15 @@ export default class DynamoDB implements RepositoryInterface {
       ExpressionAttributeNames: { "#vendorId": "vendorId" },
       ExpressionAttributeValues: marshall({ ":vendorId": vendorId }),
     };
-    const result = await this.client.send(new QueryCommand(params));
-    // return result.Items?.[0]
-    //   ? (unmarshall(result.Items[0]) as Device)
-    //   : undefined;
-    return result.Items?.length
-      ? result.Items.map((item) => unmarshall(item) as Device)
-      : undefined;
+    try {
+      const result = await this.client.send(new QueryCommand(params));
+      return result.Items?.length
+        ? result.Items.map((item) => unmarshall(item) as Device)
+        : undefined;
+    } catch (error) {
+      console.error("Error fetching devices:", error);
+      return undefined;
+    }
   }
 
   async findDeviceById(deviceId: string): Promise<Device | undefined> {
@@ -242,8 +255,10 @@ export default class DynamoDB implements RepositoryInterface {
     };
 
     // Getting Device Data from DynamoDB
-    return DynamoDButils.getDeviceResultMapper(await this.client.send(new GetCommand(getParams)));
-  };
+    return DynamoDButils.getDeviceResultMapper(
+      await this.client.send(new GetCommand(getParams))
+    );
+  }
 
   async createDevice(deviceId: string, macAddress: string): Promise<void> {
     const timestamp = new Date().toISOString();
@@ -253,21 +268,21 @@ export default class DynamoDB implements RepositoryInterface {
         deviceId,
         macAddress,
         vendorId: "Unclaimed",
-  
+
         deviceName: null,
         deviceLocation: null,
         deviceFillLevel: 0,
         deviceDescription: null,
         deviceActiveStatus: false,
-  
+
         whenClaimed: null,
         whenProvisioned: null,
-  
-        lastActionTimestamp: timestamp,
+
+        timestamp: timestamp,
       },
     };
     await this.client.send(new PutCommand(putParams));
-  };
+  }
 
   async getDevice(deviceId: string): Promise<Device | undefined> {
     {
@@ -275,26 +290,31 @@ export default class DynamoDB implements RepositoryInterface {
         TableName: DEVICES_TABLE,
         Key: { deviceId },
       };
-    
+
       // Getting Device Data from DynamoDB
-      return DynamoDButils.getDeviceResultMapper(await this.client.send(new GetCommand(getParams)));
-    };
+      return DynamoDButils.getDeviceResultMapper(
+        await this.client.send(new GetCommand(getParams))
+      );
+    }
   }
-  async updateDeviceTimestamp(deviceId: string, wasProvisioned: Boolean = false): Promise<Device> {
+  async updateDeviceTimestamp(
+    deviceId: string,
+    wasProvisioned: Boolean = false
+  ): Promise<Device> {
     const timestamp = new Date().toISOString();
     let updateParams = {
       TableName: DEVICES_TABLE,
       Key: { deviceId },
-      UpdateExpression: "set #ts = :timestamp", // Use #ts as a placeholder for 'timestamp'
+      UpdateExpression: "set #ts = :timestamp",
       ExpressionAttributeNames: {
-        "#ts": "timestamp",
+        "#ts": " ALL MY LOVE ",
       },
       ExpressionAttributeValues: {
         ":timestamp": timestamp,
       },
       ReturnValues: ReturnValue.ALL_NEW,
     };
-  
+
     if (wasProvisioned) {
       updateParams = {
         ...updateParams,
@@ -304,35 +324,33 @@ export default class DynamoDB implements RepositoryInterface {
         },
       };
     }
-  
+
     return DynamoDButils.putDeviceResultMapper(
       await this.client.send(new UpdateCommand(updateParams))
     );
   }
-
 }
 
 class DynamoDButils {
   static getDeviceResultMapper(result: GetCommandOutput): Device | undefined {
     return result.Item?.deviceId
       ? {
-        deviceId: result.Item?.deviceId || "",
-        macAddress: result.Item?.macAddress || "",
-        vendorId: result.Item?.vendorId || null,
-        deviceName: result.Item?.deviceName || null,
-        deviceLocation: result.Item?.deviceLocation || null,
-        deviceFillLevel: result.Item?.deviceFillLevel || 0,
-        deviceDescription: result.Item?.deviceDescription || null,
-        deviceActiveStatus: result.Item?.deviceActiveStatus || false,
-        whenClaimed: result.Item?.whenClaimed || null,
-        whenProvisioned: result.Item?.whenProvisioned || null,
-        lastActionTimestamp: result.Item?.lastActionTimestamp || new Date(),
-      }
+          deviceId: result.Item?.deviceId || "",
+          macAddress: result.Item?.macAddress || "",
+          vendorId: result.Item?.vendorId || null,
+          deviceName: result.Item?.deviceName || null,
+          deviceLocation: result.Item?.deviceLocation || null,
+          deviceFillLevel: result.Item?.deviceFillLevel || 0,
+          deviceDescription: result.Item?.deviceDescription || null,
+          deviceActiveStatus: result.Item?.deviceActiveStatus || false,
+          whenClaimed: result.Item?.whenClaimed || null,
+          whenProvisioned: result.Item?.whenProvisioned || null,
+          timestamp: result.Item?.timestamp || new Date(),
+        }
       : undefined;
-
   }
   static putDeviceResultMapper(result: PutCommandOutput): Device {
-    return ({
+    return {
       deviceId: result.Attributes?.deviceId || "",
       macAddress: result.Attributes?.macAddress || "",
       vendorId: result.Attributes?.vendorId || null,
@@ -343,12 +361,12 @@ class DynamoDButils {
       deviceActiveStatus: result.Attributes?.deviceActiveStatus || false,
       whenClaimed: result.Attributes?.whenClaimed || null,
       whenProvisioned: result.Attributes?.whenProvisioned || null,
-      lastActionTimestamp: result.Attributes?.lastActionTimestamp || new Date(),
-    });
+      timestamp: result.Attributes?.timestamp || new Date(),
+    };
   }
 
   static getDevicesResultMapper(result: any): Device {
-    return ({
+    return {
       deviceId: result.deviceId || "",
       macAddress: result.macAddress || "",
       vendorId: result.vendorId || null,
@@ -359,7 +377,7 @@ class DynamoDButils {
       deviceActiveStatus: result.deviceActiveStatus || false,
       whenClaimed: result.whenClaimed || null,
       whenProvisioned: result.whenProvisioned || null,
-      lastActionTimestamp: result.lastActionTimestamp || new Date(),
-    });
+      timestamp: result.timestamp || new Date(),
+    };
   }
 }

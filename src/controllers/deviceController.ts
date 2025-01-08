@@ -52,12 +52,13 @@ export const registerDevice = async (
 
       if (device.whenClaimed) {
         // Condition: Device is Registered but not yet provisioned
-        const keysAndCertificates = await iotInterface.createThingWithCertificate(deviceId);
+        const keysAndCertificates =
+          await iotInterface.createThingWithCertificate(deviceId);
         updatedDevice = await repository.updateDeviceTimestamp(deviceId, true);
         return response.status(201).json({
           message: "Device Provisioned Successfully",
           deviceState: "Provisioned",
-          timestamp: updatedDevice.lastActionTimestamp,
+          timestamp: updatedDevice.timestamp,
           ...keysAndCertificates,
         });
       } else {
@@ -65,7 +66,7 @@ export const registerDevice = async (
         return response.status(200).json({
           message: "Device already exists. Timestamp updated.",
           deviceState: "Registered",
-          timestamp: updatedDevice.lastActionTimestamp,
+          timestamp: updatedDevice.timestamp,
         });
       }
     } else {
@@ -104,7 +105,7 @@ export const claimDevice = async (
     }
     // Verify that the device's timestamp is within the allowed window (e.g., 10 minutes)
     const timestamp = new Date().toISOString();
-    const deviceTimestamp = new Date(device.lastActionTimestamp).getTime();
+    const deviceTimestamp = new Date(device.timestamp).getTime();
     const currentTimestamp = new Date().getTime();
 
     const timeDifference = currentTimestamp - deviceTimestamp;
@@ -142,20 +143,21 @@ export const createScan = async (req: Request, res: Response): Promise<any> => {
 
 export const getDevices = async (req: Request, res: Response): Promise<any> => {
   const vendorId = req.body.vendorId;
-  if (!vendorId)
-    return res.status(400).json({ message: "Vendor ID missing" });
+  if (!vendorId) return res.status(400).json({ message: "Vendor ID missing" });
   const devices = await repository.findDevicesByVendor(vendorId);
   // const devices: Device[] | undefined = await findDevicesByVendor(vendorId);
   if (!devices) return res.status(404).json({ message: "No devices found" });
   return res.status(200).json({ devices });
-}
+};
 
-export const getDeviceDetails =   async (req: Request, res: Response): Promise<any> => {
+export const getDeviceDetails = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   const { deviceId } = req.params;
   const vendorId = req.user?.id; // Vendor ID should still be part of the request body or user info (e.g., via JWT)
 
-  if (!vendorId)
-    return res.status(400).json({ message: "Vendor ID missing" });
+  if (!vendorId) return res.status(400).json({ message: "Vendor ID missing" });
 
   try {
     const device = repository.findDeviceById(deviceId);
@@ -167,4 +169,4 @@ export const getDeviceDetails =   async (req: Request, res: Response): Promise<a
   } catch (error) {
     return res.status(500).json({ message: "Server error" });
   }
-}
+};
