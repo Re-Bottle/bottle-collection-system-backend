@@ -1,3 +1,6 @@
+
+![Build](https://github.com/Re-Bottle/bottle-collection-system-backend/actions/workflows/main.yml/badge.svg)
+
 ### Install the AWS CLI
 
 Follow the instructions at [AWS Docs](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
