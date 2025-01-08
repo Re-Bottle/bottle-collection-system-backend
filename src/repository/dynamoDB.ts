@@ -29,8 +29,6 @@ export default class DynamoDB implements RepositoryInterface {
     });
   }
 
-
-
   public static getInstance(): DynamoDB {
     if (!DynamoDB.instance) {
       DynamoDB.instance = new DynamoDB();

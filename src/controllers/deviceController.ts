@@ -1,18 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import type { Device } from "../types/express.d.ts";
-import {
-  AttachThingPrincipalCommand,
-  CreateKeysAndCertificateCommand,
-  CreateKeysAndCertificateCommandOutput,
-  CreateThingCommand,
-  IoTClient,
-} from "@aws-sdk/client-iot";
 import DynamoDB from "../repository/dynamoDB.js";
 import RepositoryInterface from "../repository/repositoryInterface.js";
-
-const iotClient = new IoTClient({
-  region: process.env.AWS_REGION || "ap-south-1",
-});
+import { IOTProvider } from "../iot/iotInterface.js";
 
 /**
  * Model for DynamoDB Record
@@ -24,8 +14,7 @@ const iotClient = new IoTClient({
  */
 
 const repository: RepositoryInterface = DynamoDB.getInstance();
-
-const IOT_POLICY_NAME = process.env.IOT_POLICY_NAME || "IoTDevicePolicy";
+const iotInterface = IOTProvider.getInstance();
 
 /**
  * @route POST /register
@@ -63,7 +52,7 @@ export const registerDevice = async (
 
       if (device.whenClaimed) {
         // Condition: Device is Registered but not yet provisioned
-        const keysAndCertificates = await createThingWithCertificate(deviceId);
+        const keysAndCertificates = await iotInterface.createThingWithCertificate(deviceId);
         updatedDevice = await repository.updateDeviceTimestamp(deviceId, true);
         return response.status(201).json({
           message: "Device Provisioned Successfully",
@@ -179,51 +168,3 @@ export const getDeviceDetails =   async (req: Request, res: Response): Promise<a
     return res.status(500).json({ message: "Server error" });
   }
 }
-
-const createThingWithCertificate = async (thingName: string): Promise<any> => {
-  try {
-    // Step 1: Create keys and certificate
-    const createKeysAndCertCommand = new CreateKeysAndCertificateCommand({
-      setAsActive: false, // Activate the certificate
-    });
-
-    const certResponse: CreateKeysAndCertificateCommandOutput =
-      await iotClient.send(createKeysAndCertCommand);
-
-    const { certificateArn, certificateId, certificatePem, keyPair } =
-      certResponse;
-    console.log("Certificate created successfully:", {
-      certificateId,
-      certificateArn,
-    });
-
-    // Step 2: Create an IoT Thing
-    const createThingCommand = new CreateThingCommand({
-      thingName, // Name of the Thing
-    });
-
-    const thingResponse = await iotClient.send(createThingCommand);
-    console.log("Thing created successfully:", thingResponse);
-
-    // Step 3: Attach the certificate to the Thing
-    const attachThingPrincipalCommand = new AttachThingPrincipalCommand({
-      thingName,
-      principal: certificateArn, // Attach the certificate ARN
-    });
-
-    await iotClient.send(attachThingPrincipalCommand);
-    console.log(`Certificate attached to Thing "${thingName}" successfully.`);
-
-    return Promise.resolve({
-      certificateId,
-      certificateArn,
-      certificatePem,
-      keyPair,
-    });
-  } catch (error) {
-    console.error("Error in creating Thing and attaching certificate:", error);
-    return Promise.reject(error);
-  }
-};
-
-
