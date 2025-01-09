@@ -1,4 +1,4 @@
-import { DynamoDBClient, CreateTableCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
 
 const client = new DynamoDBClient({
   region: 'local',
@@ -130,6 +130,20 @@ const createTable = async (params) => {
   }
 };
 
+
+// Function to describe a table
+const describeTable = async (tableName) => {
+  try {
+    const command = new DescribeTableCommand({
+      TableName: tableName,
+    });
+    const data = await client.send(command);
+    console.log(`Table ${tableName} exists:`, JSON.stringify(data.Table, null, 2));
+  } catch (err) {
+    console.error(`Unable to describe table ${tableName}. Error:`, JSON.stringify(err, null, 2));
+  }
+};
+
 // Create the tables
 (async () => {
   try {
@@ -138,6 +152,15 @@ const createTable = async (params) => {
     await createTable(createDevicesTableParams);
     await createTable(createScansTableParams);
     await createTable(createRewardsTableParams);
+
+    // Validate tables existence
+    await describeTable('Users');
+    await describeTable('Vendors');
+    await describeTable('Devices');
+    await describeTable('Scans');
+    await describeTable('Rewards');
+
+    console.log("All Tables Created and Validated")
   } catch (error) {
     console.error('Error creating tables:', error);
   }
