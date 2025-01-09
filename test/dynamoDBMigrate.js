@@ -144,6 +144,20 @@ const describeTable = async (tableName) => {
   }
 };
 
+// Insert record into Vendors table
+const insertVendor = async () => {
+  const params = {
+    TableName: 'Vendors',
+    Item: {
+      id: { S: 'vendor1' },
+      email: { S: 'vendor1@example.com' },
+    },
+  };
+  const command = new PutItemCommand(params);
+  await client.send(command);
+  console.log('Inserted record into Vendors table');
+};
+
 // Create the tables
 (async () => {
   try {
@@ -159,6 +173,8 @@ const describeTable = async (tableName) => {
     await describeTable('Devices');
     await describeTable('Scans');
     await describeTable('Rewards');
+
+    await insertVendor();
 
     console.log("All Tables Created and Validated")
   } catch (error) {
