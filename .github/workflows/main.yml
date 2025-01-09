@@ -27,8 +27,8 @@ jobs:
       - name: List running Docker containers
         run: docker ps
 
-      # - name: Wait for DynamoDB to boot up
-      #   run: node .github/workflows/wait-for-Dynamodb.js
+      - name: Wait for DynamoDB to boot up
+        run: node .github/workflows/wait-for-Dynamodb.js
 
       - name: List running Docker containers
         run: docker ps
