@@ -22,7 +22,7 @@ jobs:
         run: npm install
 
       - name: Setup DynamoDB Local
-        run: docker run -d -p 8000:8000 amazon/dynamodb-local &
+        run: docker run -d -p 8000:8000 amazon/dynamodb-local
 
       - name: List running Docker containers
         run: docker ps
