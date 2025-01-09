@@ -1,4 +1,4 @@
-import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, CreateTableCommand, DescribeTableCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
 
 const client = new DynamoDBClient({
   region: 'local',
