@@ -21,14 +21,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Setup and start DynamoDB Local
-        run: docker run -d -p 8000:8000 --name dynamodb-local amazon/dynamodb-local
-
       - name: Set AWS Test environment variables
         run: |
           echo "AWS_ACCESS_KEY_ID=fakeAccessKeyId" >> $GITHUB_ENV
           echo "AWS_SECRET_ACCESS_KEY=fakeSecretAccessKey" >> $GITHUB_ENV
           echo "AWS_REGION=ap-south-1" >> $GITHUB_ENV
+
+      - name: Setup and start DynamoDB Local
+        run: docker run -d -p 8000:8000 --name dynamodb-local amazon/dynamodb-local
 
       - name: Wait for DynamoDB to come to up state
         run: node .github/workflows/wait-for-Dynamodb.js
