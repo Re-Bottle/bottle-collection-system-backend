@@ -1,7 +1,7 @@
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
 
 const client = new DynamoDBClient({
-  region: 'local',
+  region: 'ap-south-1',
   endpoint: 'http://localhost:8000',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
