@@ -1,11 +1,9 @@
-import { config, DynamoDB } from 'aws-sdk';
+import { DynamoDBClient, CreateTableCommand } from "@aws-sdk/client-dynamodb";
 
-config.update({
+const client = new DynamoDBClient({
   region: 'local',
-  endpoint: 'http://localhost:8000',
+  endpoint: 'http://localhost:8000'
 });
-
-const dynamodb = new DynamoDB();
 
 // Create Users table
 const createUsersTableParams = {
@@ -89,10 +87,6 @@ const createDevicesTableParams = {
       Projection: {
         ProjectionType: 'ALL',
       },
-      ProvisionedThroughput: {
-        ReadCapacityUnits: 5,
-        WriteCapacityUnits: 5,
-      },
     },
   ],
 };
@@ -132,18 +126,14 @@ const createRewardsTableParams = {
 };
 
 // Function to create a table
-const createTable = (params) => {
-  return new Promise((resolve, reject) => {
-    dynamodb.createTable(params, (err, data) => {
-      if (err) {
-        console.error('Unable to create table. Error JSON:', JSON.stringify(err, null, 2));
-        reject(err);
-      } else {
-        console.log('Created table:', JSON.stringify(data, null, 2));
-        resolve(data);
-      }
-    });
-  });
+const createTable = async (params) => {
+  try {
+    const command = new CreateTableCommand(params);
+    const data = await client.send(command);
+    console.log('Created table:', JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Unable to create table. Error:', JSON.stringify(err, null, 2));
+  }
 };
 
 // Create the tables
