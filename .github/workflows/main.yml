@@ -24,20 +24,17 @@ jobs:
       - name: Setup DynamoDB Local
         run: docker run -d -p 8000:8000 --name dynamodb-local amazon/dynamodb-local
 
-      - name: Print DynamoDB Local logs
-        run: docker logs dynamodb-local
-
       - name: List running Docker containers
         run: docker ps
 
       # - name: Wait for DynamoDB to boot up
       #   run: node .github/workflows/wait-for-Dynamodb.js
 
-      - name: Print DynamoDB Local logs
-        run: docker logs dynamodb-local
+      - name: List running Docker containers
+        run: docker ps
 
-      - name: Create DynamoDB Tables
-        run: node ./test/dynamoDBMigrate.js
+      # - name: Create DynamoDB Tables
+      #   run: node ./test/dynamoDBMigrate.js
 
       - name: Print DynamoDB Local logs
         run: docker logs dynamodb-local
