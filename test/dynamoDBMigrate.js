@@ -100,11 +100,6 @@ const createScansTableParams = {
   TableName: 'Scans',
   AttributeDefinitions: [
     { AttributeName: 'code', AttributeType: 'S' },
-    { AttributeName: 'deviceId', AttributeType: 'S' },
-    { AttributeName: 'createdOn', AttributeType: 'N' },
-    { AttributeName: 'claimedOn', AttributeType: 'N' },
-    { AttributeName: 'claimedBy', AttributeType: 'S' },
-    { AttributeName: 'bottleType', AttributeType: 'S' },
   ],
   KeySchema: [
     { AttributeName: 'code', KeyType: 'HASH' },
@@ -117,11 +112,6 @@ const createRewardsTableParams = {
   TableName: 'Rewards',
   AttributeDefinitions: [
     { AttributeName: '_id', AttributeType: 'S' },
-    { AttributeName: 'rewardName', AttributeType: 'S' },
-    { AttributeName: 'rewardDescription', AttributeType: 'S' },
-    { AttributeName: 'rewardCost', AttributeType: 'N' },
-    { AttributeName: 'validSince', AttributeType: 'N' },
-    { AttributeName: 'validUntil', AttributeType: 'N' },
   ],
   KeySchema: [
     { AttributeName: '_id', KeyType: 'HASH' },
