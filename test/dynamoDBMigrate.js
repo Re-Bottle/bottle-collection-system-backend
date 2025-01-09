@@ -1,11 +1,11 @@
-const AWS = require('aws-sdk');
+import { config, DynamoDB } from 'aws-sdk';
 
-AWS.config.update({
+config.update({
   region: 'local',
   endpoint: 'http://localhost:8000',
 });
 
-const dynamodb = new AWS.DynamoDB();
+const dynamodb = new DynamoDB();
 
 // Create Users table
 const createUsersTableParams = {
