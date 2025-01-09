@@ -25,7 +25,7 @@ jobs:
         run: docker run -d -p 8000:8000 amazon/dynamodb-local &
 
       - name: Wait for DynamoDB to boot up
-        run: node .github/workflows/main.yml
+        run: node .github/workflows/wait-for-Dynamodb.js
 
       - name: Create DynamoDB Tables
         run: node ./test/dynamoDBMigrate.js
