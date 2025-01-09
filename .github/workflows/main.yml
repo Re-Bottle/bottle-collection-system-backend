@@ -30,14 +30,17 @@ jobs:
       - name: List running Docker containers
         run: docker ps
 
-      - name: Wait for DynamoDB to boot up
-        run: node .github/workflows/wait-for-Dynamodb.js
+      # - name: Wait for DynamoDB to boot up
+      #   run: node .github/workflows/wait-for-Dynamodb.js
 
       - name: Print DynamoDB Local logs
         run: docker logs dynamodb-local
 
       - name: Create DynamoDB Tables
         run: node ./test/dynamoDBMigrate.js
+
+      - name: Print DynamoDB Local logs
+        run: docker logs dynamodb-local
 
       - name: Run tests
         run: npm test
