@@ -29,9 +29,9 @@ jobs:
 
       - name: Verify AWS environment variables
         run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}"
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-          echo "AWS_REGION=${{ secrets.AWS_REGION }}"
+          echo "AWS_ACCESS_KEY_ID = ${{ secrets.AWS_ACCESS_KEY_ID }}"
+          echo "AWS_SECRET_ACCESS_KEY = ${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          echo "AWS_REGION = ${{ secrets.AWS_REGION }}"
 
       - name: Setup and start DynamoDB Local
         run: docker run -d -p 8000:8000 --name dynamodb-local amazon/dynamodb-local

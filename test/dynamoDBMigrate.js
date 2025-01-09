@@ -3,7 +3,10 @@ import { DynamoDBClient, CreateTableCommand } from "@aws-sdk/client-dynamodb";
 const client = new DynamoDBClient({
   region: 'local',
   endpoint: 'http://localhost:8000',
-  credentials: { accessKeyId: 'dummy-access-key-id', secretAccessKey: 'dummy-secret-access-key', },
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+  },
 });
 
 // Create Users table
