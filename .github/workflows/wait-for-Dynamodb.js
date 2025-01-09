@@ -2,7 +2,10 @@
 import { setTimeout } from 'timers/promises'
 import { DynamoDBClient, ListTablesCommand } from '@aws-sdk/client-dynamodb'
 
-const dynamodbClient = new DynamoDBClient({ region: 'ap-south-1' })
+const dynamodbClient = new DynamoDBClient({ 
+    region: 'ap-south-1',
+    endpoint: 'http://localhost:8000',
+ })
 
 let iteration = 500;
 
