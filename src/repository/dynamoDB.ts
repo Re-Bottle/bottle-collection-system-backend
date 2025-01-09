@@ -36,6 +36,7 @@ export default class DynamoDB implements RepositoryInterface {
 
     // Type-checking: Ensure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are defined
     if (!awsAccessKeyId || !awsSecretAccessKey) {
+      console.log(awsAccessKeyId + " : " + awsSecretAccessKey)
       throw new Error('AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set in environment variables.');
     }
 
