@@ -5,10 +5,6 @@ import { DynamoDBClient, ListTablesCommand } from '@aws-sdk/client-dynamodb'
 const dynamodbClient = new DynamoDBClient({ 
     region: 'ap-south-1',
     endpoint: 'http://localhost:8000',
-    credentials: {
-        accessKeyId: 'fakeAccessKeyId',
-        secretAccessKey: 'fakeSecretAccessKey'
-    }    
  })
 
 let iteration = 500;
