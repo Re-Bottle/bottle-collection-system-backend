@@ -28,10 +28,26 @@ export default class DynamoDB implements RepositoryInterface {
   private client: DynamoDBClient;
 
   private constructor() {
+
+    // Ensure that environment variables are defined and assert non-null values
+    const awsAccessKeyId = process.env.AWS_ACCESS_KEY_ID!;
+    const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY!;
+    const region = process.env.AWS_REGION || 'ap-south-1'; // Default region if not set
+
+    // Type-checking: Ensure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are defined
+    if (!awsAccessKeyId || !awsSecretAccessKey) {
+      throw new Error('AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set in environment variables.');
+    }
+
     this.client = new DynamoDBClient({
-      region: "ap-south-1",
-      endpoint: "http://localhost:8000",
+      region,
+      endpoint: 'http://localhost:8000', // Add your endpoint if needed
+      credentials: {
+        accessKeyId: awsAccessKeyId, // Now treated as a string (non-null)
+        secretAccessKey: awsSecretAccessKey, // Now treated as a string (non-null)
+      },
     });
+
   }
 
   public static getInstance(): DynamoDB {
@@ -335,18 +351,18 @@ class DynamoDButils {
   static getDeviceResultMapper(result: GetCommandOutput): Device | undefined {
     return result.Item?.deviceId
       ? {
-          deviceId: result.Item?.deviceId || "",
-          macAddress: result.Item?.macAddress || "",
-          vendorId: result.Item?.vendorId || null,
-          deviceName: result.Item?.deviceName || null,
-          deviceLocation: result.Item?.deviceLocation || null,
-          deviceFillLevel: result.Item?.deviceFillLevel || 0,
-          deviceDescription: result.Item?.deviceDescription || null,
-          deviceActiveStatus: result.Item?.deviceActiveStatus || false,
-          whenClaimed: result.Item?.whenClaimed || null,
-          whenProvisioned: result.Item?.whenProvisioned || null,
-          timestamp: result.Item?.timestamp || new Date(),
-        }
+        deviceId: result.Item?.deviceId || "",
+        macAddress: result.Item?.macAddress || "",
+        vendorId: result.Item?.vendorId || null,
+        deviceName: result.Item?.deviceName || null,
+        deviceLocation: result.Item?.deviceLocation || null,
+        deviceFillLevel: result.Item?.deviceFillLevel || 0,
+        deviceDescription: result.Item?.deviceDescription || null,
+        deviceActiveStatus: result.Item?.deviceActiveStatus || false,
+        whenClaimed: result.Item?.whenClaimed || null,
+        whenProvisioned: result.Item?.whenProvisioned || null,
+        timestamp: result.Item?.timestamp || new Date(),
+      }
       : undefined;
   }
   static putDeviceResultMapper(result: PutCommandOutput): Device {
