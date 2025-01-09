@@ -22,12 +22,10 @@ jobs:
         run: npm install
 
       - name: Setup DynamoDB Local
-        uses: rrainn/dynamodb-action@v2.0.1
-        with:
-          dbPath: './dynamodb-local'
-          sharedDb: true
-          port: 8000
-          cors: '*'
+        run: docker run -d -p 8000:8000 amazon/dynamodb-local &
+
+      - name: Wait for DynamoDB to boot up
+        run: node ./wait-for-Dynamodb.js
 
       - name: Create DynamoDB Tables
         run: node ./test/dynamoDBMigrate.js
