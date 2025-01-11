@@ -75,11 +75,11 @@ const createVendorsTableParams = {
 const createDevicesTableParams = {
   TableName: 'Devices',
   AttributeDefinitions: [
-    { AttributeName: 'deviceId', AttributeType: 'S' },
+    { AttributeName: 'id', AttributeType: 'S' },
     { AttributeName: 'vendorId', AttributeType: 'S' },
   ],
   KeySchema: [
-    { AttributeName: 'deviceId', KeyType: 'HASH' },
+    { AttributeName: 'id', KeyType: 'HASH' },
   ],
   BillingMode: 'PAY_PER_REQUEST',
   GlobalSecondaryIndexes: [
@@ -99,10 +99,10 @@ const createDevicesTableParams = {
 const createScansTableParams = {
   TableName: 'Scans',
   AttributeDefinitions: [
-    { AttributeName: 'code', AttributeType: 'S' },
+    { AttributeName: 'id', AttributeType: 'S' },
   ],
   KeySchema: [
-    { AttributeName: 'code', KeyType: 'HASH' },
+    { AttributeName: 'id', KeyType: 'HASH' },
   ],
   BillingMode: 'PAY_PER_REQUEST',
 };
@@ -111,10 +111,10 @@ const createScansTableParams = {
 const createRewardsTableParams = {
   TableName: 'Rewards',
   AttributeDefinitions: [
-    { AttributeName: '_id', AttributeType: 'S' },
+    { AttributeName: 'id', AttributeType: 'S' },
   ],
   KeySchema: [
-    { AttributeName: '_id', KeyType: 'HASH' },
+    { AttributeName: 'id', KeyType: 'HASH' },
   ],
   BillingMode: 'PAY_PER_REQUEST',
 };
