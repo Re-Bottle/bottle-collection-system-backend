@@ -251,6 +251,7 @@ describe("POST /getDevices", () => {
       .send(deviceData)
       .set("Cookie", webCookies)
       .end((err: Error, res: any) => {
+        console.log(res.body);
         if (err) return done(err);
         expect(res).to.have.status(200);
         expect(res.body).to.have.property("devices").not.eql(null);
