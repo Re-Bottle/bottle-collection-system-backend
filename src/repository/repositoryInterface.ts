@@ -9,6 +9,7 @@ export default abstract class RepositoryInterface {
     password: string,
     name: string
   ): Promise<User>;
+  abstract deleteVendor(id: string): Promise<boolean>;
 
   // User Table Actions
   abstract findUserByEmail(email: string): Promise<User | undefined>;
@@ -34,8 +35,12 @@ export default abstract class RepositoryInterface {
     deviceLocation: string,
     deviceDescription: string
   ): Promise<any>;
-  abstract getDevice(deviceId: string):Promise<Device | undefined>;
+  abstract getDevice(deviceId: string): Promise<Device | undefined>;
   abstract findDevicesByVendor(vendorId: string): Promise<Device[] | undefined>;
   abstract findDeviceById(deviceId: string): Promise<Device | undefined>;
-  abstract updateDeviceTimestamp(deviceId: string, wasProvisioned: Boolean): Promise<Device>;
+  abstract updateDeviceTimestamp(
+    deviceId: string,
+    wasProvisioned: Boolean
+  ): Promise<Device>;
+  abstract deleteDevice(deviceId: string): Promise<boolean>;
 }

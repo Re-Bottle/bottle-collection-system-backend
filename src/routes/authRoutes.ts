@@ -14,6 +14,7 @@ import {
   updateUser,
   deleteUser,
   userRequestValidator,
+  deleteVendor,
 } from "../controllers/authController.js";
 import { authenticateJWT } from "../utils/authUtils.js";
 
@@ -24,6 +25,8 @@ router.post("/signupVendor", signupVendorRequestValidator, signupVendor);
 
 // Login route
 router.post("/loginVendor", loginVendorRequestValidator, loginVendor);
+
+router.post("/deleteVendor", authenticateJWT, deleteVendor);
 
 // Signup route for users
 router.post("/signup", signupUserRequestValidator, signupUser);

@@ -28,27 +28,27 @@ export default class DynamoDB implements RepositoryInterface {
   private client: DynamoDBClient;
 
   private constructor() {
-
     // Ensure that environment variables are defined and assert non-null values
     const awsAccessKeyId = process.env.AWS_ACCESS_KEY_ID!;
     const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY!;
-    const region = process.env.AWS_REGION || 'ap-south-1'; // Default region if not set
+    const region = process.env.AWS_REGION || "ap-south-1"; // Default region if not set
 
     // Type-checking: Ensure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are defined
     if (!awsAccessKeyId || !awsSecretAccessKey) {
-      console.log(awsAccessKeyId + " : " + awsSecretAccessKey)
-      throw new Error('AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set in environment variables.');
+      console.log(awsAccessKeyId + " : " + awsSecretAccessKey);
+      throw new Error(
+        "AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set in environment variables."
+      );
     }
 
     this.client = new DynamoDBClient({
       region,
-      endpoint: 'http://localhost:8000', // Add your endpoint if needed
+      endpoint: "http://localhost:8000", // Add your endpoint if needed
       credentials: {
         accessKeyId: awsAccessKeyId, // Now treated as a string (non-null)
         secretAccessKey: awsSecretAccessKey, // Now treated as a string (non-null)
       },
     });
-
   }
 
   public static getInstance(): DynamoDB {
@@ -102,6 +102,21 @@ export default class DynamoDB implements RepositoryInterface {
 
     await this.client.send(new PutItemCommand(params));
     return newUser;
+  }
+
+  async deleteVendor(vendorId: string): Promise<boolean> {
+    const params = {
+      TableName: VENDORS_TABLE,
+      Key: marshall({ id: vendorId }),
+    };
+
+    try {
+      await this.client.send(new DeleteItemCommand(params));
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
   }
 
   async findUserByEmail(email: string): Promise<User | undefined> {
@@ -265,10 +280,10 @@ export default class DynamoDB implements RepositoryInterface {
     }
   }
 
-  async findDeviceById(deviceId: string): Promise<Device | undefined> {
+  async findDeviceById(id: string): Promise<Device | undefined> {
     const getParams = {
       TableName: DEVICES_TABLE,
-      Key: { deviceId },
+      Key: { id },
     };
 
     // Getting Device Data from DynamoDB
@@ -277,12 +292,12 @@ export default class DynamoDB implements RepositoryInterface {
     );
   }
 
-  async createDevice(deviceId: string, macAddress: string): Promise<void> {
+  async createDevice(id: string, macAddress: string): Promise<void> {
     const timestamp = new Date().toISOString();
     const putParams = {
       TableName: DEVICES_TABLE,
       Item: {
-        deviceId,
+        id,
         macAddress,
         vendorId: "Unclaimed",
 
@@ -301,11 +316,11 @@ export default class DynamoDB implements RepositoryInterface {
     await this.client.send(new PutCommand(putParams));
   }
 
-  async getDevice(deviceId: string): Promise<Device | undefined> {
+  async getDevice(id: string): Promise<Device | undefined> {
     {
       const getParams = {
         TableName: DEVICES_TABLE,
-        Key: { deviceId },
+        Key: { id },
       };
 
       // Getting Device Data from DynamoDB
@@ -315,13 +330,13 @@ export default class DynamoDB implements RepositoryInterface {
     }
   }
   async updateDeviceTimestamp(
-    deviceId: string,
+    id: string,
     wasProvisioned: Boolean = false
   ): Promise<Device> {
     const timestamp = new Date().toISOString();
     let updateParams = {
       TableName: DEVICES_TABLE,
-      Key: { deviceId },
+      Key: { id },
       UpdateExpression: "set #ts = :timestamp",
       ExpressionAttributeNames: {
         "#ts": " ALL MY LOVE ",
@@ -346,24 +361,39 @@ export default class DynamoDB implements RepositoryInterface {
       await this.client.send(new UpdateCommand(updateParams))
     );
   }
+
+  async deleteDevice(id: string): Promise<boolean> {
+    const params = {
+      TableName: DEVICES_TABLE,
+      Key: marshall({ id }),
+    };
+
+    try {
+      await this.client.send(new DeleteItemCommand(params));
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  }
 }
 
 class DynamoDButils {
   static getDeviceResultMapper(result: GetCommandOutput): Device | undefined {
-    return result.Item?.deviceId
+    return result.Item?.id
       ? {
-        deviceId: result.Item?.deviceId || "",
-        macAddress: result.Item?.macAddress || "",
-        vendorId: result.Item?.vendorId || null,
-        deviceName: result.Item?.deviceName || null,
-        deviceLocation: result.Item?.deviceLocation || null,
-        deviceFillLevel: result.Item?.deviceFillLevel || 0,
-        deviceDescription: result.Item?.deviceDescription || null,
-        deviceActiveStatus: result.Item?.deviceActiveStatus || false,
-        whenClaimed: result.Item?.whenClaimed || null,
-        whenProvisioned: result.Item?.whenProvisioned || null,
-        timestamp: result.Item?.timestamp || new Date(),
-      }
+          deviceId: result.Item?.id || "",
+          macAddress: result.Item?.macAddress || "",
+          vendorId: result.Item?.vendorId || null,
+          deviceName: result.Item?.deviceName || null,
+          deviceLocation: result.Item?.deviceLocation || null,
+          deviceFillLevel: result.Item?.deviceFillLevel || 0,
+          deviceDescription: result.Item?.deviceDescription || null,
+          deviceActiveStatus: result.Item?.deviceActiveStatus || false,
+          whenClaimed: result.Item?.whenClaimed || null,
+          whenProvisioned: result.Item?.whenProvisioned || null,
+          timestamp: result.Item?.timestamp || new Date(),
+        }
       : undefined;
   }
   static putDeviceResultMapper(result: PutCommandOutput): Device {

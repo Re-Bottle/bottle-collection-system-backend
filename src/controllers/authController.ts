@@ -128,6 +128,19 @@ export const loginVendor = async (
   }
 };
 
+export const deleteVendor = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const { vendorId } = req.body;
+  const result = await repository.deleteVendor(vendorId);
+  if (result) {
+    return res.json({ message: "Vendor deleted successfully" });
+  } else {
+    return res.status(500).json({ message: "Failed to delete vendor" });
+  }
+};
+
 export const signupUserRequestValidator = (
   req: Request,
   res: Response,

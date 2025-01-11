@@ -146,7 +146,8 @@ export const getDevices = async (req: Request, res: Response): Promise<any> => {
   if (!vendorId) return res.status(400).json({ message: "Vendor ID missing" });
   const devices = await repository.findDevicesByVendor(vendorId);
   // const devices: Device[] | undefined = await findDevicesByVendor(vendorId);
-  if (!devices) return res.status(404).json({ message: "No devices found" });
+  if (!devices)
+    return res.status(200).json({ message: "No devices found", devices: [] });
   return res.status(200).json({ devices });
 };
 
@@ -168,5 +169,18 @@ export const getDeviceDetails = async (
     return res.status(200).json({ device });
   } catch (error) {
     return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const deleteDevice = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const { deviceId } = req.body;
+  const result = await repository.deleteDevice(deviceId);
+  if (result) {
+    return res.json({ message: "Device deleted successfully" });
+  } else {
+    return res.status(500).json({ message: "Failed to delete device" });
   }
 };

@@ -4,10 +4,10 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node-dev --respawn src/index.ts --transpileOnly",
     "build": "tsc",
-    "dev": "nodemon --exec node --loader ts-node/esm src/index.ts",
+    "start": "nodemon --exec node --loader ts-node/esm src/index.ts",
     "test": "npx mocha --exit",
+    "fresh_test": "call .\\src\\repository\\init.bat && npm test",
     "build_and_run": "npx tsc && node dist/src/index.js"
   },
   "keywords": [],

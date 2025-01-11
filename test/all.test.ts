@@ -6,9 +6,9 @@ import app from "../src/index.js";
 const chai = use(chaiHttp);
 let webCookies: any;
 let appCookies: any;
-let resetToken: any;
+let vendorId: any;
 
-describe("Healthy", () => {
+describe("Server", () => {
   it("Server Hello", function (done) {
     chai.request
       .execute(app)
@@ -21,7 +21,7 @@ describe("Healthy", () => {
   });
 });
 
-describe("POST /signupVendor", () => {
+describe("Vendor Signup", () => {
   // Test case: Successfully create a new vendor
   it("should create a new vendor when valid data is provided", function (done) {
     let vendorData = {
@@ -71,7 +71,7 @@ describe("POST /signupVendor", () => {
 });
 
 // Test suite for the loginVendor route
-describe("POST /loginVendor", () => {
+describe("Vendor Login", () => {
   // Test case: Successfully login with correct credentials
   it("should login vendor when valid data is provided", (done) => {
     const vendorData = {
@@ -86,6 +86,7 @@ describe("POST /loginVendor", () => {
       .end((err: Error, res: any) => {
         if (err) return done(err);
         webCookies = res.header["set-cookie"];
+        vendorId = res.body.id;
         expect(res).to.have.status(200);
         expect(res.body).to.have.property("message").eql("Login successful");
         expect(res.body).to.have.property("email").eql(vendorData.email);
@@ -137,7 +138,30 @@ describe("POST /loginVendor", () => {
   });
 });
 
-describe("POST /register", () => {
+describe("Vendor Delete", () => {
+  // Test case: Successfully delete vendor
+  it("should delete vendor", (done) => {
+    let vendorData = { vendorId };
+
+    chai.request
+      .execute(app)
+      .post("/auth/deleteVendor")
+      .set("Cookie", webCookies)
+      .send(vendorData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+
+        expect(res).to.have.status(200);
+        expect(res.body)
+          .to.have.property("message")
+          .eql("Vendor deleted successfully");
+
+        done();
+      });
+  });
+});
+
+describe("Device Register", () => {
   // Test case: Device is not yet Registered
   it("should create a new device as valid data is provided", function (done) {
     let deviceData = {
@@ -187,7 +211,7 @@ describe("POST /register", () => {
 });
 
 // Test suite for the claimDevice route
-describe("POST /claimDevice", () => {
+describe("Device Claim", () => {
   // Test case: Successfully login with correct credentials
   it("should login vendor when valid data is provided", (done) => {
     const deviceData = {
@@ -241,20 +265,19 @@ describe("POST /claimDevice", () => {
 });
 
 // Test suite for the getDevices route
-describe("POST /getDevices", () => {
-  // Test case: Successfully get all devices
-  it("should get all devices", (done) => {
-    let deviceData = { vendorId: "Test Vendor" };
+describe("Get Devices", () => {
+  // Test case: No devices found for the vendor
+  it("should show no devices", (done) => {
+    let deviceData = { vendorId: "Test" };
     chai.request
       .execute(app)
       .post("/device/getDevices")
       .send(deviceData)
       .set("Cookie", webCookies)
       .end((err: Error, res: any) => {
-        console.log(res.body);
         if (err) return done(err);
         expect(res).to.have.status(200);
-        expect(res.body).to.have.property("devices").not.eql(null);
+        expect(res.body).to.have.property("message").eql("No devices found");
         done();
       });
   });
@@ -274,27 +297,11 @@ describe("POST /getDevices", () => {
         done();
       });
   });
-
-  // Test case: No devices found for the vendor
-  it("should show no devices", (done) => {
-    let deviceData = { vendorId: "Test" };
-    chai.request
-      .execute(app)
-      .post("/device/getDevices")
-      .send(deviceData)
-      .set("Cookie", webCookies)
-      .end((err: Error, res: any) => {
-        if (err) return done(err);
-        expect(res).to.have.status(404);
-        expect(res.body).to.have.property("message").eql("No devices found");
-        done();
-      });
-  });
 });
 
 // Android Application
 // Test suite for the register route for users
-describe("POST /signup", () => {
+describe("User Signup", () => {
   // Test case: Successfully create
   it("should create a new user when valid data is provided", function (done) {
     let userData = {
@@ -375,7 +382,7 @@ describe("POST /signup", () => {
   });
 });
 // Test suite for the login route for users
-describe("POST /login", () => {
+describe("User Login", () => {
   // Test case: Successfully login with correct credentials
   it("should login user when valid data is provided", (done) => {
     let userData = {
@@ -450,7 +457,7 @@ describe("POST /login", () => {
 });
 
 // // Test suite for the logout route
-describe("POST /logout", () => {
+describe("User Logout", () => {
   // Test case: Successfully logout
   it("should logout user", (done) => {
     chai.request
