@@ -32,7 +32,7 @@ export const validateDevice = (
   next: NextFunction
 ): void => {
   const device = req.body;
-  if (!device.deviceId || !device.macAddress) {
+  if (!device.id || !device.macAddress) {
     res.status(400).json({ message: "Device ID and MAC Address are required" });
     return;
   }
@@ -46,11 +46,10 @@ export const validateDeviceClaim = (
 ): any => {
   const deviceClaimed = req.body;
   if (
-    !deviceClaimed.deviceId ||
+    !deviceClaimed.id ||
     !deviceClaimed.vendorId ||
     !deviceClaimed.deviceName ||
-    !deviceClaimed.deviceLocation ||
-    !deviceClaimed.deviceDescription
+    !deviceClaimed.deviceLocation
   ) {
     return res.status(400).json({ message: "Some parameters are missing" });
   }

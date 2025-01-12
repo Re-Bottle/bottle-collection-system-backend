@@ -28,11 +28,15 @@ Follow the instructions at [AWS Docs](https://docs.aws.amazon.com/cli/latest/use
 
 ### Create Scans Table
 
-`aws dynamodb create-table --table-name Scans --attribute-definitions AttributeName=id,AttributeType=S --key-schema AttributeName=id,KeyType=HASH --billing-mode PAY_PER_REQUEST --endpoint-url http://localhost:8000`
+`aws dynamodb create-table --table-name Scans --attribute-definitions AttributeName=id,AttributeType=S --key-schema AttributeName=id,KeyType=HASH --billing-mode PAY_PER_REQUEST --endpoint-url http://localhost:8000 --global-secondary-indexes '[{"IndexName": "UserIdIndex", "KeySchema": [{"AttributeName": "userID", "KeyType": "HASH"} ], "Projection": {"ProjectionType": "ALL"}, "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5}}]'`
 
 ### Create Rewards Table
 
 ` aws dynamodb create-table --table-name Rewards --attribute-definitions AttributeName=id,AttributeType=S --key-schema AttributeName=id,KeyType=HASH --billing-mode PAY_PER_REQUEST --endpoint-url http://localhost:8000`
+
+### Create Claims Table
+
+`aws dynamodb create-table  --table-name Claims --attribute-definitions AttributeName=id,AttributeType=S AttributeName=rewardId,AttributeType=S AttributeName=rewardCost,AttributeType=N AttributeName=availablePoints,AttributeType=N  --key-schema AttributeName=id,KeyType=HASH --billing-mode PAY_PER_REQUEST --endpoint-url http://localhost:8000 --global-secondary-indexes '[{"IndexName": "UserIdIndex", "KeySchema": [{"AttributeName": "userID", "KeyType": "HASH"} ], "Projection": {"ProjectionType": "ALL"}, "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5}}]'`
 
 ### List Tables
 

@@ -29,18 +29,18 @@ export default abstract class RepositoryInterface {
   // Device Table Actions
   abstract createDevice(deviceId: string, macAddress: string): Promise<void>;
   abstract registerDevice(
-    deviceId: string,
+    id: string,
     vendorId: string,
     deviceName: string,
     deviceLocation: string,
     deviceDescription: string
   ): Promise<any>;
-  abstract getDevice(deviceId: string): Promise<Device | undefined>;
+  abstract getDevice(id: string): Promise<Device | undefined>;
   abstract findDevicesByVendor(vendorId: string): Promise<Device[] | undefined>;
-  abstract findDeviceById(deviceId: string): Promise<Device | undefined>;
+  abstract findDeviceById(id: string): Promise<Device | undefined>;
   abstract updateDeviceTimestamp(
-    deviceId: string,
+    id: string,
     wasProvisioned: Boolean
   ): Promise<Device>;
-  abstract deleteDevice(deviceId: string): Promise<boolean>;
+  abstract deleteDevice(id: string): Promise<boolean>;
 }

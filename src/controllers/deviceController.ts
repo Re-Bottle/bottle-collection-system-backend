@@ -34,11 +34,11 @@ export const registerDevice = async (
   response: Response,
   _: NextFunction
 ): Promise<any> => {
-  const { deviceId, macAddress } = request.body;
+  const { id, macAddress } = request.body;
 
   try {
     // Getting Device Data from DynamoDB
-    const device = await repository.getDevice(deviceId);
+    const device = await repository.getDevice(id);
     if (device) {
       // Condition: Device Exists in Database already
       if (device.whenProvisioned)
@@ -53,25 +53,24 @@ export const registerDevice = async (
       if (device.whenClaimed) {
         // Condition: Device is Registered but not yet provisioned
         const keysAndCertificates =
-          await iotInterface.createThingWithCertificate(deviceId);
-        updatedDevice = await repository.updateDeviceTimestamp(deviceId, true);
+          await iotInterface.createThingWithCertificate(id);
+        updatedDevice = await repository.updateDeviceTimestamp(id, true);
         return response.status(201).json({
           message: "Device Provisioned Successfully",
           deviceState: "Provisioned",
-          timestamp: updatedDevice.timestamp,
+          ownerID: device.vendorId,
           ...keysAndCertificates,
         });
       } else {
-        updatedDevice = await repository.updateDeviceTimestamp(deviceId, false);
+        updatedDevice = await repository.updateDeviceTimestamp(id, false);
         return response.status(200).json({
           message: "Device already exists. Timestamp updated.",
           deviceState: "Registered",
-          timestamp: updatedDevice.timestamp,
         });
       }
     } else {
       //Condition: Device is not yet Registered
-      await repository.createDevice(deviceId, macAddress);
+      await repository.createDevice(id, macAddress);
       return response.status(200).json({
         message: "Device Created Successfully",
         deviceState: "Registered",
@@ -90,11 +89,11 @@ export const claimDevice = async (
   response: Response,
   _: NextFunction
 ): Promise<any> => {
-  const { deviceId, vendorId, deviceName, deviceLocation, deviceDescription } =
+  const { id, vendorId, deviceName, deviceLocation, deviceDescription } =
     request.body;
 
   try {
-    const device = await repository.getDevice(deviceId);
+    const device = await repository.getDevice(id);
     if (device == null) {
       return response.status(404).json({ message: "Device not found" });
     }
@@ -105,7 +104,7 @@ export const claimDevice = async (
     }
     // Verify that the device's timestamp is within the allowed window (e.g., 10 minutes)
     const timestamp = new Date().toISOString();
-    const deviceTimestamp = new Date(device.timestamp).getTime();
+    const deviceTimestamp = new Date(device.lastActveTimestamp).getTime();
     const currentTimestamp = new Date().getTime();
 
     const timeDifference = currentTimestamp - deviceTimestamp;
@@ -116,7 +115,7 @@ export const claimDevice = async (
         .json({ message: "Device registration has expired" });
     }
     const registeredDevice = repository.registerDevice(
-      deviceId,
+      id,
       vendorId,
       deviceName,
       deviceLocation,
@@ -155,13 +154,13 @@ export const getDeviceDetails = async (
   req: Request,
   res: Response
 ): Promise<any> => {
-  const { deviceId } = req.params;
+  const { id } = req.params;
   const vendorId = req.user?.id; // Vendor ID should still be part of the request body or user info (e.g., via JWT)
 
   if (!vendorId) return res.status(400).json({ message: "Vendor ID missing" });
 
   try {
-    const device = repository.findDeviceById(deviceId);
+    const device = repository.findDeviceById(id);
     if (!device) {
       return res.status(404).json({ message: "Device not found" });
     }
@@ -176,8 +175,8 @@ export const deleteDevice = async (
   req: Request,
   res: Response
 ): Promise<any> => {
-  const { deviceId } = req.body;
-  const result = await repository.deleteDevice(deviceId);
+  const { id } = req.body;
+  const result = await repository.deleteDevice(id);
   if (result) {
     return res.json({ message: "Device deleted successfully" });
   } else {

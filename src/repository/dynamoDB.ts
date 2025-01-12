@@ -224,7 +224,7 @@ export default class DynamoDB implements RepositoryInterface {
   }
 
   async registerDevice(
-    deviceId: string,
+    id: string,
     vendorId: string,
     deviceName: string,
     deviceLocation: string,
@@ -234,7 +234,7 @@ export default class DynamoDB implements RepositoryInterface {
     const updateParams = {
       TableName: DEVICES_TABLE,
       Key: {
-        deviceId, // The partition key of the item
+        id, // The partition key of the item
       },
       UpdateExpression: `
       SET
@@ -244,7 +244,7 @@ export default class DynamoDB implements RepositoryInterface {
         deviceDescription = :deviceDescription,
         deviceActiveStatus = :deviceActiveStatus,
         whenClaimed = :whenClaimed,
-        timestamp = :timestamp
+        lastActveTimestamp = :lastActveTimestamp
     `,
       ExpressionAttributeValues: {
         ":vendorId": vendorId,
@@ -253,7 +253,7 @@ export default class DynamoDB implements RepositoryInterface {
         ":deviceDescription": deviceDescription,
         ":deviceActiveStatus": false, // Default value
         ":whenClaimed": timestamp,
-        ":timestamp": timestamp,
+        ":lastActveTimestamp": timestamp,
       },
       ReturnValues: ReturnValue.ALL_NEW,
     };
@@ -310,7 +310,7 @@ export default class DynamoDB implements RepositoryInterface {
         whenClaimed: null,
         whenProvisioned: null,
 
-        timestamp: timestamp,
+        lastActveTimestamp: timestamp,
       },
     };
     await this.client.send(new PutCommand(putParams));
@@ -337,12 +337,12 @@ export default class DynamoDB implements RepositoryInterface {
     let updateParams = {
       TableName: DEVICES_TABLE,
       Key: { id },
-      UpdateExpression: "set #ts = :timestamp",
+      UpdateExpression: "set #ts = :lastActveTimestamp",
       ExpressionAttributeNames: {
-        "#ts": " ALL MY LOVE ",
+        "#ts": "lastActveTimestamp",
       },
       ExpressionAttributeValues: {
-        ":timestamp": timestamp,
+        ":lastActveTimestamp": timestamp,
       },
       ReturnValues: ReturnValue.ALL_NEW,
     };
@@ -350,7 +350,8 @@ export default class DynamoDB implements RepositoryInterface {
     if (wasProvisioned) {
       updateParams = {
         ...updateParams,
-        UpdateExpression: "set #ts = :timestamp, whenProvisioned = :timestamp",
+        UpdateExpression:
+          "set #ts = :lastActveTimestamp, whenProvisioned = :lastActveTimestamp",
         ExpressionAttributeNames: {
           ...updateParams.ExpressionAttributeNames,
         },
@@ -392,7 +393,7 @@ class DynamoDButils {
           deviceActiveStatus: result.Item?.deviceActiveStatus || false,
           whenClaimed: result.Item?.whenClaimed || null,
           whenProvisioned: result.Item?.whenProvisioned || null,
-          timestamp: result.Item?.timestamp || new Date(),
+          lastActveTimestamp: result.Item?.lastActveTimestamp || new Date(),
         }
       : undefined;
   }
@@ -408,7 +409,7 @@ class DynamoDButils {
       deviceActiveStatus: result.Attributes?.deviceActiveStatus || false,
       whenClaimed: result.Attributes?.whenClaimed || null,
       whenProvisioned: result.Attributes?.whenProvisioned || null,
-      timestamp: result.Attributes?.timestamp || new Date(),
+      lastActveTimestamp: result.Attributes?.lastActveTimestamp || new Date(),
     };
   }
 
@@ -424,7 +425,7 @@ class DynamoDButils {
       deviceActiveStatus: result.deviceActiveStatus || false,
       whenClaimed: result.whenClaimed || null,
       whenProvisioned: result.whenProvisioned || null,
-      timestamp: result.timestamp || new Date(),
+      lastActveTimestamp: result.lastActveTimestamp || new Date(),
     };
   }
 }
