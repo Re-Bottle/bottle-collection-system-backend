@@ -1,9 +1,9 @@
 import { it, describe } from "mocha";
 import { expect, use } from "chai";
-import chaiHttp from "chai-http";
+import chaiHttp, { request } from "chai-http";
 import app from "../src/index.js";
 
-let chai = use(chaiHttp);
+use(chaiHttp);
 let appCookies: any;
 
 // Android Application
@@ -16,7 +16,7 @@ describe("User Signup", () => {
       password: "P@ssword123",
       name: "Test User",
     };
-    chai.request
+    request
       .execute(app)
       .post("/auth/signup")
       .send(userData)
@@ -36,7 +36,7 @@ describe("User Signup", () => {
       password: "P@ssword123",
       name: "Test User",
     };
-    chai.request
+    request
       .execute(app)
       .post("/auth/signup")
       .send(userData)
@@ -54,7 +54,7 @@ describe("User Signup", () => {
       password: "",
       name: "Test User",
     };
-    chai.request
+    request
       .execute(app)
       .post("/auth/signup")
       .send(userData)
@@ -74,7 +74,7 @@ describe("User Signup", () => {
       password: "",
       name: "",
     };
-    chai.request
+    request
       .execute(app)
       .post("/auth/signup")
       .send(userData)
@@ -96,7 +96,7 @@ describe("User Login", () => {
       email: "user@test.com",
       password: "P@ssword123",
     };
-    chai.request
+    request
       .execute(app)
       .post("/auth/login")
       .send(userData)
@@ -114,7 +114,7 @@ describe("User Login", () => {
       email: "user@test.com",
       password: "Password1",
     };
-    chai.request
+    request
       .execute(app)
       .post("/auth/login")
       .send(userData)
@@ -131,7 +131,7 @@ describe("User Login", () => {
       email: "user99@test.com",
       password: "Password1",
     };
-    chai.request
+    request
       .execute(app)
       .post("/auth/login")
       .send(userData)
@@ -148,7 +148,7 @@ describe("User Login", () => {
       email: "user@test.com",
       password: "",
     };
-    chai.request
+    request
       .execute(app)
       .post("/auth/login")
       .send(userData)
@@ -167,7 +167,7 @@ describe("User Login", () => {
 describe("User Logout", () => {
   // Test case: Successfully logout
   it("should logout user", (done) => {
-    chai.request
+    request
       .execute(app)
       .post("/auth/logout")
       .set("Cookie", appCookies)

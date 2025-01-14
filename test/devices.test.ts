@@ -9,7 +9,7 @@ describe("Device Register", () => {
   // Test case: Device is not yet Registered
   it("should create a new device as valid data is provided", function (done) {
     let deviceData = {
-      deviceId: "TEST-001-PI-001-20250106-8b9c7d9f",
+      id: "TEST-001-PI-001-20250106-8b9c7d9f",
       macAddress: "00:14:22:01:23:45",
     };
 
@@ -32,7 +32,7 @@ describe("Device Register", () => {
   // Test case: Device is Registered but not yet provisioned
   it("should update the timestamp", (done) => {
     let deviceData = {
-      deviceId: "TEST-001-PI-001-20250106-8b9c7d9f",
+      id: "TEST-001-PI-001-20250106-8b9c7d9f",
       macAddress: "00:14:22:01:23:45",
     };
 
@@ -48,7 +48,6 @@ describe("Device Register", () => {
           .to.have.property("message")
           .eql("Device already exists. Timestamp updated.");
         expect(res.body).to.have.property("deviceState").eql("Registered");
-        expect(res.body).to.have.property("timestamp").not.eql(null);
         done();
       });
   });

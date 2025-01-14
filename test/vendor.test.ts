@@ -1,16 +1,15 @@
 import { it, describe } from "mocha";
 import { expect, use } from "chai";
-import chaiHttp from "chai-http";
+import chaiHttp, { request } from "chai-http";
 import app from "../src/index.js";
 
-let chai = use(chaiHttp);
+use(chaiHttp);
 let webCookies: any;
-let appCookies: any;
 let vendorId: any;
 
 describe("Server", () => {
   it("Server Hello", function (done) {
-    chai.request
+    request
       .execute(app)
       .get("/")
       .then((res: any) => {
@@ -30,7 +29,7 @@ describe("Vendor Signup", () => {
       name: "Test Vendor",
     };
 
-    chai.request
+    request
       .execute(app)
       .post("/auth/signupVendor")
       .send(vendorData)
@@ -53,7 +52,7 @@ describe("Vendor Signup", () => {
       name: "Test Vendor",
     };
 
-    chai.request
+    request
       .execute(app)
       .post("/auth/signupVendor")
       .send(vendorData)
@@ -79,7 +78,7 @@ describe("Vendor Login", () => {
       password: "P@ssword123",
     };
 
-    chai.request
+    request
       .execute(app)
       .post("/auth/loginVendor")
       .send(vendorData)
@@ -104,7 +103,7 @@ describe("Vendor Login", () => {
       password: "Password123",
     };
 
-    chai.request
+    request
       .execute(app)
       .post("/auth/loginVendor")
       .send(vendorData)
@@ -124,7 +123,7 @@ describe("Vendor Login", () => {
       password: "P@ssword123",
     };
 
-    chai.request
+    request
       .execute(app)
       .post("/auth/loginVendor")
       .send(vendorData)
@@ -143,7 +142,7 @@ describe("Vendor Delete", () => {
   it("should delete vendor", (done) => {
     let vendorData = { vendorId };
 
-    chai.request
+    request
       .execute(app)
       .post("/auth/deleteVendor")
       .set("Cookie", webCookies)
@@ -166,14 +165,14 @@ describe("Vendor Device Claim", () => {
   // Test case: Successfully login with correct credentials
   it("should claim device when valid data is provided", (done) => {
     const deviceData = {
-      deviceId: "TEST-001-PI-001-20250106-8b9c7d9f",
+      id: "TEST-001-PI-001-20250106-8b9c7d9f",
       vendorId: "Test Vendor",
       deviceName: "Test Device",
       deviceLocation: "Test Location",
       deviceDescription: "Test Description",
     };
 
-    chai.request
+    request
       .execute(app)
       .post("/device/claimDevice")
       .set("Cookie", webCookies)
@@ -193,11 +192,11 @@ describe("Vendor Device Claim", () => {
   // Test case: Not all inputs are given
   it("shouldn't claim device when all required data is not provided", (done) => {
     const deviceData = {
-      deviceId: "TEST-001-PI-001-20250106-8b9c7d9f",
+      id: "TEST-001-PI-001-20250106-8b9c7d9f",
       vendorId: "Test Vendor",
     };
 
-    chai.request
+    request
       .execute(app)
       .post("/device/claimDevice")
       .send(deviceData)
@@ -220,7 +219,7 @@ describe("Vendor Get Devices", () => {
   // Test case: No devices found for the vendor
   it("should show no devices", (done) => {
     let deviceData = { vendorId: "Test" };
-    chai.request
+    request
       .execute(app)
       .post("/device/getDevices")
       .send(deviceData)
@@ -236,7 +235,7 @@ describe("Vendor Get Devices", () => {
   // Test case: Missing vendor ID
   it("should show vendor id is missing", (done) => {
     let deviceData = { vendorId: "" };
-    chai.request
+    request
       .execute(app)
       .post("/device/getDevices")
       .send(deviceData)
