@@ -249,6 +249,98 @@ describe("Vendor Get Devices", () => {
   });
 });
 
+describe("Edit Device", () => {
+  //Test case: Device exists under the vendor
+  it("should update the device details", (done) => {
+    let deviceData = {
+      id: "TEST-001-PI-001-20250106-8b9c7d9f",
+      deviceName: "Test Device",
+      deviceLocation: "Test Location",
+      deviceDescription: "Test Description",
+    };
+
+    request
+      .execute(app)
+      .post("/device/editDevice")
+      .set("Cookie", webCookies)
+      .send(deviceData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+        console.log(res.body);
+        expect(res).to.have.status(200);
+        expect(res.body)
+          .to.have.property("message")
+          .eql("Device updated successfully");
+        done();
+      });
+  });
+
+  //Test case: Id is not sent
+  it("should not update the device details as id is missing", (done) => {
+    let deviceData = {
+      deviceName: "Test Device",
+      deviceLocation: "Test Location",
+      deviceDescription: "Test Description",
+    };
+
+    request
+      .execute(app)
+      .post("/device/editDevice")
+      .set("Cookie", webCookies)
+      .send(deviceData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+        expect(res).to.have.status(400);
+        expect(res.body).to.have.property("message").eql("Device ID missing");
+        done();
+      });
+  });
+
+  //Test case: Device name is not sent
+  it("should not update the device details as device name is missing", (done) => {
+    let deviceData = {
+      id: "TEST-001-PI-001-20250106-8b9c7d9f",
+      deviceLocation: "Test Location",
+      deviceDescription: "Test Description",
+    };
+
+    request
+      .execute(app)
+      .post("/device/editDevice")
+      .set("Cookie", webCookies)
+      .send(deviceData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+        expect(res).to.have.status(400);
+        expect(res.body).to.have.property("message").eql("Device name missing");
+        done();
+      });
+  });
+
+  //Test case: Device location is not sent
+  it("should not update the device details as device location is missing", (done) => {
+    let deviceData = {
+      id: "TEST-001-PI-001-20250106-8b9c7d9f",
+      deviceName: "Test Device",
+      deviceDescription: "Test Description",
+    };
+
+    request
+      .execute(app)
+      .post("/device/editDevice")
+      .set("Cookie", webCookies)
+      .send(deviceData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+        expect(res).to.have.status(400);
+        expect(res.body)
+          .to.have.property("message")
+          .eql("Device location missing");
+        done();
+      });
+  });
+});
+
 // // Test suite for the forgotPassword route
 // describe("POST /forgotPassword", () => {
 //   // Test case: Successfully request password reset

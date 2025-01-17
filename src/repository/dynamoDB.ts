@@ -329,6 +329,7 @@ export default class DynamoDB implements RepositoryInterface {
       );
     }
   }
+
   async updateDeviceTimestamp(
     id: string,
     wasProvisioned: Boolean = false
@@ -357,10 +358,37 @@ export default class DynamoDB implements RepositoryInterface {
         },
       };
     }
-
     return DynamoDButils.putDeviceResultMapper(
       await this.client.send(new UpdateCommand(updateParams))
     );
+  }
+
+  async updateDeviceDetails(
+    id: string,
+    deviceName: string,
+    deviceLocation: string,
+    deviceDescription: string
+  ): Promise<any> {
+    const updateParams = {
+      TableName: DEVICES_TABLE,
+      Key: {
+        id, // The partition key of the item
+      },
+      UpdateExpression: `
+      SET
+        deviceName = :deviceName,
+        deviceLocation = :deviceLocation,
+        deviceDescription = :deviceDescription
+         `,
+      ExpressionAttributeValues: {
+        ":deviceName": deviceName,
+        ":deviceLocation": deviceLocation,
+        ":deviceDescription": deviceDescription,
+      },
+      ReturnValues: ReturnValue.ALL_NEW,
+    };
+    const data = await this.client.send(new UpdateCommand(updateParams));
+    return data.Attributes;
   }
 
   async deleteDevice(id: string): Promise<boolean> {

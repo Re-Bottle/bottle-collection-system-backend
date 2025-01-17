@@ -8,6 +8,7 @@ import {
   claimDevice,
   createScan,
   deleteDevice,
+  editDevice,
   getDeviceDetails,
   getDevices,
   registerDevice,
@@ -40,6 +41,8 @@ router.post("/createScan", createScan);
 router.post("/getDevices", authenticateJWT, getDevices);
 
 router.post("/getDeviceDetails/:deviceId", authenticateJWT, getDeviceDetails);
+
+router.post("/editDevice", authenticateJWT, editDevice);
 
 router.post("/deleteDevice", authenticateJWT, deleteDevice);
 

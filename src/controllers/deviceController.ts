@@ -171,6 +171,28 @@ export const getDeviceDetails = async (
   }
 };
 
+export const editDevice = async (req: Request, res: Response): Promise<any> => {
+  const { id, deviceName, deviceLocation, deviceDescription } = req.body;
+  if (!id) return res.status(400).json({ message: "Device ID missing" });
+  if (!deviceName)
+    return res.status(400).json({ message: "Device name missing" });
+  if (!deviceLocation)
+    return res.status(400).json({ message: "Device location missing" });
+
+  const result = await repository.updateDeviceDetails(
+    id,
+    deviceName,
+    deviceLocation,
+    deviceDescription
+  );
+
+  if (result) {
+    return res.json({ message: "Device updated successfully" });
+  } else {
+    return res.status(500).json({ message: "Failed to update device" });
+  }
+};
+
 export const deleteDevice = async (
   req: Request,
   res: Response

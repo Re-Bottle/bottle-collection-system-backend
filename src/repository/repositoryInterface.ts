@@ -42,5 +42,11 @@ export default abstract class RepositoryInterface {
     id: string,
     wasProvisioned: Boolean
   ): Promise<Device>;
+  abstract updateDeviceDetails(
+    id: string,
+    deviceName: string,
+    deviceLocation: string,
+    deviceDescription: string
+  ): Promise<boolean>;
   abstract deleteDevice(id: string): Promise<boolean>;
 }
