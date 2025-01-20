@@ -166,7 +166,7 @@ describe("Vendor Device Claim", () => {
   it("should claim device when valid data is provided", (done) => {
     const deviceData = {
       id: "TEST-001-PI-001-20250106-8b9c7d9f",
-      vendorId: "Test Vendor",
+      vendorId,
       deviceName: "Test Device",
       deviceLocation: "Test Location",
       deviceDescription: "Test Description",
@@ -193,7 +193,7 @@ describe("Vendor Device Claim", () => {
   it("shouldn't claim device when all required data is not provided", (done) => {
     const deviceData = {
       id: "TEST-001-PI-001-20250106-8b9c7d9f",
-      vendorId: "Test Vendor",
+      vendorId,
     };
 
     request
@@ -266,7 +266,6 @@ describe("Edit Device", () => {
       .send(deviceData)
       .end((err: Error, res: any) => {
         if (err) return done(err);
-        console.log(res.body);
         expect(res).to.have.status(200);
         expect(res.body)
           .to.have.property("message")
@@ -336,6 +335,49 @@ describe("Edit Device", () => {
         expect(res.body)
           .to.have.property("message")
           .eql("Device location missing");
+        done();
+      });
+  });
+});
+
+describe("Delete Device", () => {
+  // Test case: Device does not exist
+  it("should return an error message", function (done) {
+    let deviceData = {
+      id: "TEST-001-PI-001-20250106",
+    };
+
+    request
+      .execute(app)
+      .post("/device/deleteDevice")
+      .set("Cookie", webCookies)
+      .send(deviceData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+        expect(res).to.have.status(404);
+        expect(res.body).to.have.property("message").eql("Device not found");
+        done();
+      });
+  });
+
+  // Test case: Device exists and can be deleted
+  it("should return success message", (done) => {
+    let deviceData = {
+      id: "TEST-001-PI-001-20250106-8b9c7d9f",
+    };
+
+    request
+      .execute(app)
+      .post("/device/deleteDevice")
+      .set("Cookie", webCookies)
+      .send(deviceData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+
+        expect(res).to.have.status(200);
+        expect(res.body)
+          .to.have.property("message")
+          .eql("Device deleted successfully");
         done();
       });
   });
@@ -413,7 +455,7 @@ describe("Edit Device", () => {
 //       .send(userData)
 //       .end((err: Error, res: any) => {
 //         if (err) return done(err);
-//         console.log(res.body);
+//         console.log(res);
 //         expect(res).to.have.status(200);
 //         expect(res.body)
 //           .to.have.property("message")

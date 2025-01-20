@@ -337,7 +337,13 @@ export const resetPassword = async (
 
 export const updateUser = async (req: Request, res: Response): Promise<any> => {
   const { id, name } = req.body;
-  return await repository.updateUserName(id, name);
+  console.log(id, name);
+  const result = await repository.updateUserName(id, name);
+  if (result) {
+    return res.json({ message: "User details updated successfully" });
+  } else {
+    return res.status(500).json({ message: "Failed to update user details" });
+  }
 };
 
 export const userRequestValidator = (
@@ -365,10 +371,12 @@ export const userRequestValidator = (
 
 export const deleteUser = async (req: Request, res: Response): Promise<any> => {
   const { id } = req.body;
+  if (!id || id.length === 0)
+    return res.status(400).json({ error: "User ID missing" });
   const result = await repository.deleteUser(id);
   if (result) {
     return res.json({ message: "User deleted successfully" });
   } else {
-    return res.status(500).json({ message: "Failed to delete user" });
+    return res.status(500).json({ error: "Failed to delete user" });
   }
 };

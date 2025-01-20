@@ -135,11 +135,6 @@ export const claimDevice = async (
   }
 };
 
-export const createScan = async (req: Request, res: Response): Promise<any> => {
-  // TODO: Implement Function
-  throw new Error("Unimplemented Function");
-};
-
 export const getDevices = async (req: Request, res: Response): Promise<any> => {
   const vendorId = req.body.vendorId;
   if (!vendorId) return res.status(400).json({ message: "Vendor ID missing" });
@@ -148,27 +143,6 @@ export const getDevices = async (req: Request, res: Response): Promise<any> => {
   if (!devices)
     return res.status(200).json({ message: "No devices found", devices: [] });
   return res.status(200).json({ devices });
-};
-
-export const getDeviceDetails = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
-  const { id } = req.params;
-  const vendorId = req.user?.id; // Vendor ID should still be part of the request body or user info (e.g., via JWT)
-
-  if (!vendorId) return res.status(400).json({ message: "Vendor ID missing" });
-
-  try {
-    const device = repository.findDeviceById(id);
-    if (!device) {
-      return res.status(404).json({ message: "Device not found" });
-    }
-
-    return res.status(200).json({ device });
-  } catch (error) {
-    return res.status(500).json({ message: "Server error" });
-  }
 };
 
 export const editDevice = async (req: Request, res: Response): Promise<any> => {
@@ -198,9 +172,13 @@ export const deleteDevice = async (
   res: Response
 ): Promise<any> => {
   const { id } = req.body;
+  const device = await repository.findDeviceById(id);
+  if (!device) {
+    return res.status(404).json({ message: "Device not found" });
+  }
   const result = await repository.deleteDevice(id);
   if (result) {
-    return res.json({ message: "Device deleted successfully" });
+    return res.status(200).json({ message: "Device deleted successfully" });
   } else {
     return res.status(500).json({ message: "Failed to delete device" });
   }

@@ -5,6 +5,7 @@ import app from "../src/index.js";
 
 use(chaiHttp);
 let appCookies: any;
+let userID: string;
 
 // Android Application
 // Test suite for the register route for users
@@ -22,10 +23,12 @@ describe("User Signup", () => {
       .send(userData)
       .end((err: Error, res: any) => {
         if (err) return done(err);
+        userID = res.body.user.id;
         expect(res).to.have.status(201);
         expect(res.body)
           .to.have.property("message")
           .eql("User created successfully");
+        expect(res.body).to.have.property("user");
         done();
       });
   });
@@ -163,6 +166,72 @@ describe("User Login", () => {
   });
 });
 
+// // Test suite for the update user route
+describe("User Update", () => {
+  // Test case: Successfully update user details
+  it("should update user details", (done) => {
+    let userData = {
+      id: userID,
+      name: "Test User Updated",
+    };
+    request
+      .execute(app)
+      .post("/auth/user")
+      .set("Cookie", appCookies)
+      .send(userData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+        console.log(res.body);
+        expect(res).to.have.status(200);
+        expect(res.body)
+          .to.have.property("message")
+          .eql("User details updated successfully");
+        done();
+      });
+  });
+  // Test case: Failed update with missing data
+  it("should not update user details when input is missing", (done) => {
+    let userData = {
+      id: userID,
+      name: "",
+    };
+    request
+      .execute(app)
+      .post("/auth/user")
+      .set("Cookie", appCookies)
+      .send(userData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+        expect(res).to.have.status(400);
+        expect(res.body)
+          .to.have.property("error")
+          .eql("Missing required field: id or name");
+        done();
+      });
+  });
+
+  // Test case: Failed update with missing data
+  it("should not update user details when input is missing", (done) => {
+    let userData = {
+      id: "",
+      name: "Test User Updated",
+    };
+    request
+      .execute(app)
+      .post("/auth/user")
+      .set("Cookie", appCookies)
+      .send(userData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+        expect(res).to.have.status(400);
+        expect(res.body)
+          .to.have.property("error")
+          .eql("Missing required field: id or name");
+        done();
+      });
+  });
+});
+
 // // Test suite for the logout route
 describe("User Logout", () => {
   // Test case: Successfully logout
@@ -177,6 +246,46 @@ describe("User Logout", () => {
         expect(res.body)
           .to.have.property("message")
           .eql("Logged out successfully");
+        done();
+      });
+  });
+});
+
+// // Test suite for the delete user route
+describe("User Delete", () => {
+  // Test case: Successfully delete user
+  it("should delete user", (done) => {
+    let userData = {
+      id: userID,
+    };
+    request
+      .execute(app)
+      .post("/auth/deleteUser")
+      .set("Cookie", appCookies)
+      .send(userData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+        expect(res).to.have.status(200);
+        expect(res.body)
+          .to.have.property("message")
+          .eql("User deleted successfully");
+        done();
+      });
+  });
+  // Test case: Failed delete with missing data
+  it("should not delete user when input is missing", (done) => {
+    let userData = {
+      id: "",
+    };
+    request
+      .execute(app)
+      .post("/auth/deleteUser")
+      .set("Cookie", appCookies)
+      .send(userData)
+      .end((err: Error, res: any) => {
+        if (err) return done(err);
+        expect(res).to.have.status(400);
+        expect(res.body).to.have.property("error").eql("User ID missing");
         done();
       });
   });

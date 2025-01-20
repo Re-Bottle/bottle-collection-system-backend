@@ -6,10 +6,8 @@ import {
 } from "../utils/authUtils.js";
 import {
   claimDevice,
-  createScan,
   deleteDevice,
   editDevice,
-  getDeviceDetails,
   getDevices,
   registerDevice,
 } from "../controllers/deviceController.js";
@@ -35,12 +33,7 @@ router.post("/register", validateDevice, registerDevice);
  */
 router.post("/claimDevice", authenticateJWT, validateDeviceClaim, claimDevice);
 
-// Add Scanned Bottle
-router.post("/createScan", createScan);
-
 router.post("/getDevices", authenticateJWT, getDevices);
-
-router.post("/getDeviceDetails/:deviceId", authenticateJWT, getDeviceDetails);
 
 router.post("/editDevice", authenticateJWT, editDevice);
 
