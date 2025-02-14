@@ -1,4 +1,4 @@
-import { Device, User } from "../types/express.js";
+import { Device, Reward, User } from "../types/express.js";
 
 export default abstract class RepositoryInterface {
   // Vendor Table Actions
@@ -49,4 +49,7 @@ export default abstract class RepositoryInterface {
     deviceDescription: string
   ): Promise<boolean>;
   abstract deleteDevice(id: string): Promise<boolean>;
+
+  // Reward Table Actions
+  abstract getRewards(): Promise<Reward[] | undefined>;
 }

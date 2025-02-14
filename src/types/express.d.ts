@@ -22,6 +22,14 @@ export interface Device {
   lastActveTimestamp: Date;
 }
 
+export interface Reward {
+  rewardId: string;
+  rewardName: string;
+  rewardDescription: string;
+  rewardPoints: number;
+  rewardActiveStatus: boolean;
+}
+
 declare global {
   namespace Express {
     interface Request {

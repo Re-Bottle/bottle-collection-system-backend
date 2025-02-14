@@ -6,8 +6,9 @@ import {
   QueryCommand,
   ReturnValue,
   UpdateItemCommand,
+  ScanCommand,
 } from "@aws-sdk/client-dynamodb";
-import type { Device, User } from "../types/express.js";
+import type { Device, User, Reward } from "../types/express.js";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
 import RepositoryInterface from "./repositoryInterface.js";
@@ -22,6 +23,7 @@ import {
 const USERS_TABLE = "Users";
 const VENDORS_TABLE = "Vendors";
 const DEVICES_TABLE = "Devices";
+const REWARDS_TABLE = "Rewards";
 
 export default class DynamoDB implements RepositoryInterface {
   private static instance: DynamoDB;
@@ -405,6 +407,18 @@ export default class DynamoDB implements RepositoryInterface {
       return false;
     }
   }
+
+  async getRewards(): Promise<Reward[] | undefined> {
+    const params = {
+      TableName: REWARDS_TABLE,
+    };
+    const result = await this.client.send(new ScanCommand(params));
+    return result.Items?.length
+      ? result.Items.map((item) =>
+          DynamoDButils.getRewardsResultMapper(unmarshall(item))
+        )
+      : undefined;
+  }
 }
 
 class DynamoDButils {
@@ -454,6 +468,16 @@ class DynamoDButils {
       whenClaimed: result.whenClaimed || null,
       whenProvisioned: result.whenProvisioned || null,
       lastActveTimestamp: result.lastActveTimestamp || new Date(),
+    };
+  }
+
+  static getRewardsResultMapper(result: any): Reward {
+    return {
+      rewardId: result.id || "",
+      rewardName: result.rewardName || "",
+      rewardDescription: result.rewardDescription || "",
+      rewardPoints: result.rewardPoints || 0,
+      rewardActiveStatus: result.rewardActiveStatus || false,
     };
   }
 }

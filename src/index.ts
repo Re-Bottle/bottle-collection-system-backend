@@ -27,7 +27,7 @@ app.use("/auth", authRoutes);
 app.use("/device", deviceRoutes);
 
 // Reward Routes
-app.use("/Reward", rewardRoutes);
+app.use("/reward", rewardRoutes);
 
 app.get("/", (req, res) => {
   res.sendStatus(200);
