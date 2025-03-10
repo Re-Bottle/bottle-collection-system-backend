@@ -24,6 +24,7 @@ const USERS_TABLE = "Users";
 const VENDORS_TABLE = "Vendors";
 const DEVICES_TABLE = "Devices";
 const REWARDS_TABLE = "Rewards";
+const SCANS_TABLE = "Scans";
 
 export default class DynamoDB implements RepositoryInterface {
   private static instance: DynamoDB;
@@ -419,6 +420,113 @@ export default class DynamoDB implements RepositoryInterface {
         )
       : undefined;
   }
+
+  async createScan(deviceId: string, scanData: string): Promise<any> {
+    const timestamp = new Date().toISOString();
+    const claimedBy = "unclaimed";
+    const newScan = {
+      id: String(Date.now()),
+      claimedBy,
+      deviceId,
+      scanData,
+      timestamp,
+    };
+
+    console.log(newScan);
+
+    const params = {
+      TableName: SCANS_TABLE,
+      Item: marshall(newScan, { removeUndefinedValues: true }),
+    };
+
+    await this.client.send(new PutItemCommand(params));
+    return newScan;
+  }
+
+  async getScanByData(scanData: string): Promise<any> {
+    const params = {
+      TableName: SCANS_TABLE,
+      IndexName: "ScanDataIndex",
+      KeyConditionExpression: "#scanData = :scanData",
+      ExpressionAttributeNames: { "#scanData": "scanData" },
+      ExpressionAttributeValues: marshall({ ":scanData": scanData }),
+    };
+
+    try {
+      const result = await this.client.send(new QueryCommand(params));
+      return result.Items?.length
+        ? result.Items.map((item) => unmarshall(item))
+        : undefined;
+    } catch (error) {
+      console.error("Error fetching scan by data:", error);
+      return undefined;
+    }
+  }
+
+  async updateScanUserId(id: string, claimedBy: string): Promise<any> {
+    const params = {
+      TableName: SCANS_TABLE,
+      Key: marshall({ id }),
+      UpdateExpression: "set #claimedBy = :claimedBy",
+      ExpressionAttributeNames: {
+        "#claimedBy": "claimedBy",
+      },
+      ExpressionAttributeValues: marshall({
+        ":claimedBy": claimedBy,
+      }),
+      ReturnValues: ReturnValue.ALL_NEW,
+    };
+
+    const result = await this.client.send(new UpdateItemCommand(params));
+    return result.Attributes ? unmarshall(result.Attributes) : undefined;
+  }
+
+  async getScans(): Promise<any> {
+    const params = {
+      TableName: SCANS_TABLE,
+    };
+    const result = await this.client.send(new ScanCommand(params));
+    return result.Items?.length
+      ? result.Items.map((item) => unmarshall(item))
+      : undefined;
+  }
+
+  // async getScansByDevice(deviceId: string): Promise<any> {
+  //   const params = {
+  //     TableName: SCANS_TABLE,
+  //     IndexName: "DeviceIdIndex",
+  //     KeyConditionExpression: "#deviceId = :deviceId",
+  //     ExpressionAttributeNames: { "#deviceId": "deviceId" },
+  //     ExpressionAttributeValues: marshall({ ":deviceId": deviceId }),
+  //   };
+
+  //   try {
+  //     const result = await this.client.send(new QueryCommand(params));
+  //     return result.Items?.length
+  //       ? result.Items.map((item) => unmarshall(item))
+  //       : undefined;
+  //   } catch (error) {
+  //     console.error("Error fetching scans by device:", error);
+  //     return undefined;
+  //   }
+  // }
+
+  getScansByUser(claimedBy: string): Promise<any> {
+    const params = {
+      TableName: SCANS_TABLE,
+      IndexName: "ClaimedByIndex",
+      KeyConditionExpression: "#claimedBy = :claimedBy",
+      ExpressionAttributeNames: { "#claimedBy": "claimedBy" },
+      ExpressionAttributeValues: marshall({ ":claimedBy": claimedBy }),
+    };
+    return this.client
+      .send(new QueryCommand(params))
+      .then((result) =>
+        result.Items?.length
+          ? result.Items.map((item) => unmarshall(item))
+          : undefined
+      );
+  }
 }
 
 class DynamoDButils {
@@ -478,6 +586,18 @@ class DynamoDButils {
       rewardDescription: result.rewardDescription || "",
       rewardPoints: result.rewardPoints || 0,
       rewardActiveStatus: result.rewardActiveStatus || false,
+      redeem_by: result.redeem_by || "",
+    };
+  }
+
+  static getScansResultMapper(result: any): any {
+    return {
+      id: result.id || "",
+      claimedBy: result.claimedBy || "",
+      deviceId: result.deviceId || "",
+      scanData: result.scanData || "",
+      timestamp: result.timestamp || new Date(),
+      claimed: result.claimed || false,
     };
   }
 }

@@ -4,7 +4,7 @@ import { getRewards } from "../controllers/rewardControllers.js";
 const router = Router();
 
 // Get Rewards
-router.post("/getRewards", getRewards);
+router.get("/getRewards", getRewards);
 
 // Get Reward Points
 router.get(

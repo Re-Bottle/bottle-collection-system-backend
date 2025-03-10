@@ -28,6 +28,15 @@ export interface Reward {
   rewardDescription: string;
   rewardPoints: number;
   rewardActiveStatus: boolean;
+  redeem_by: string | null;
+}
+
+export interface Scan {
+  id: string;
+  claimedBy: string;
+  deviceId: string;
+  scanData: string;
+  timestamp: Date;
 }
 
 declare global {

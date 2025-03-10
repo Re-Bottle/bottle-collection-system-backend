@@ -1,4 +1,4 @@
-import { Device, Reward, User } from "../types/express.js";
+import { Device, Reward, Scan, User } from "../types/express.js";
 
 export default abstract class RepositoryInterface {
   // Vendor Table Actions
@@ -52,4 +52,12 @@ export default abstract class RepositoryInterface {
 
   // Reward Table Actions
   abstract getRewards(): Promise<Reward[] | undefined>;
+
+  // Scan Table Actions
+  abstract createScan(deviceId: string, scanData: string): Promise<Scan>;
+  abstract getScanByData(scanData: string): Promise<Scan[]>;
+  abstract updateScanUserId(scanData: string, userId: string): Promise<Scan>;
+  abstract getScans(): Promise<Scan>;
+  // abstract getScansByDevice(deviceId: string): Promise<Scan>;
+  abstract getScansByUser(userId: string): Promise<Scan>;
 }
