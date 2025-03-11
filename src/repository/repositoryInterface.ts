@@ -54,10 +54,12 @@ export default abstract class RepositoryInterface {
   abstract getRewards(): Promise<Reward[] | undefined>;
 
   // Scan Table Actions
-  abstract createScan(deviceId: string, scanData: string): Promise<Scan>;
+  abstract createScan(
+    deviceId: string,
+    scanData: string,
+    bottleType: number
+  ): Promise<Scan>;
   abstract getScanByData(scanData: string): Promise<Scan[]>;
   abstract updateScanUserId(scanData: string, userId: string): Promise<Scan>;
-  abstract getScans(): Promise<Scan>;
-  // abstract getScansByDevice(deviceId: string): Promise<Scan>;
-  abstract getScansByUser(userId: string): Promise<Scan>;
+  abstract getScansByUser(userId: string): Promise<any>;
 }

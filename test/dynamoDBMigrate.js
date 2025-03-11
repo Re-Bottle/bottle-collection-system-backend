@@ -84,6 +84,10 @@ const createDevicesTableParams = {
       Projection: {
         ProjectionType: "ALL",
       },
+      ProvisionedThroughput: {
+        ReadCapacityUnits: 5,
+        WriteCapacityUnits: 5,
+      },
     },
   ],
 };
@@ -91,9 +95,35 @@ const createDevicesTableParams = {
 // Create Scans table
 const createScansTableParams = {
   TableName: "Scans",
-  AttributeDefinitions: [{ AttributeName: "id", AttributeType: "S" }],
+  AttributeDefinitions: [
+    { AttributeName: "id", AttributeType: "S" },
+    { AttributeName: "scanData", AttributeType: "S" },
+    { AttributeName: "claimedBy", AttributeType: "S" },
+  ],
   KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
   BillingMode: "PAY_PER_REQUEST",
+  GlobalSecondaryIndexes: [
+    {
+      IndexName: "ScanDataIndex",
+      KeySchema: [{ AttributeName: "scanData", KeyType: "HASH" }],
+      Projection: {
+        ProjectionType: "ALL",
+      },
+      ProvisionedThroughput: {
+        ReadCapacityUnits: 5,
+        WriteCapacityUnits: 5,
+      },
+      IndexName: "ClaimedByIndex",
+      KeySchema: [{ AttributeName: "claimedBy", KeyType: "HASH" }],
+      Projection: {
+        ProjectionType: "ALL",
+      },
+      ProvisionedThroughput: {
+        ReadCapacityUnits: 5,
+        WriteCapacityUnits: 5,
+      },
+    },
+  ],
 };
 
 // Create Rewards table

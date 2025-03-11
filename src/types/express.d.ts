@@ -37,6 +37,7 @@ export interface Scan {
   deviceId: string;
   scanData: string;
   timestamp: Date;
+  bottleType: number;
 }
 
 declare global {

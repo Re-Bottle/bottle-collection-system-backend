@@ -421,7 +421,11 @@ export default class DynamoDB implements RepositoryInterface {
       : undefined;
   }
 
-  async createScan(deviceId: string, scanData: string): Promise<any> {
+  async createScan(
+    deviceId: string,
+    scanData: string,
+    bottleType: number
+  ): Promise<any> {
     const timestamp = new Date().toISOString();
     const claimedBy = "unclaimed";
     const newScan = {
@@ -430,9 +434,8 @@ export default class DynamoDB implements RepositoryInterface {
       deviceId,
       scanData,
       timestamp,
+      bottleType,
     };
-
-    console.log(newScan);
 
     const params = {
       TableName: SCANS_TABLE,
@@ -481,37 +484,7 @@ export default class DynamoDB implements RepositoryInterface {
     return result.Attributes ? unmarshall(result.Attributes) : undefined;
   }
 
-  async getScans(): Promise<any> {
-    const params = {
-      TableName: SCANS_TABLE,
-    };
-    const result = await this.client.send(new ScanCommand(params));
-    return result.Items?.length
-      ? result.Items.map((item) => unmarshall(item))
-      : undefined;
-  }
-
-  // async getScansByDevice(deviceId: string): Promise<any> {
-  //   const params = {
-  //     TableName: SCANS_TABLE,
-  //     IndexName: "DeviceIdIndex",
-  //     KeyConditionExpression: "#deviceId = :deviceId",
-  //     ExpressionAttributeNames: { "#deviceId": "deviceId" },
-  //     ExpressionAttributeValues: marshall({ ":deviceId": deviceId }),
-  //   };
-
-  //   try {
-  //     const result = await this.client.send(new QueryCommand(params));
-  //     return result.Items?.length
-  //       ? result.Items.map((item) => unmarshall(item))
-  //       : undefined;
-  //   } catch (error) {
-  //     console.error("Error fetching scans by device:", error);
-  //     return undefined;
-  //   }
-  // }
-
-  getScansByUser(claimedBy: string): Promise<any> {
+  async getScansByUser(claimedBy: string): Promise<any> {
     const params = {
       TableName: SCANS_TABLE,
       IndexName: "ClaimedByIndex",
