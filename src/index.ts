@@ -17,7 +17,7 @@ app.use(
   cors({
     credentials: true,
     origin: "http://localhost:3001",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "DELETE", "PUT"],
   })
 ); // For allowing cross-origin requests
 

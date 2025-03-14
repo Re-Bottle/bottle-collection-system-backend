@@ -409,6 +409,29 @@ export default class DynamoDB implements RepositoryInterface {
     }
   }
 
+  async createReward(
+    rewardName: string,
+    rewardDescription: string,
+    rewardPoints: number,
+    redeemBy: string
+  ): Promise<Reward> {
+    const newReward = {
+      id: String(Date.now()),
+      rewardName: rewardName,
+      rewardDescription: rewardDescription,
+      rewardPoints: rewardPoints,
+      rewardActiveStatus: true,
+      redeemBy: redeemBy,
+    };
+    const params = {
+      TableName: REWARDS_TABLE,
+      Item: marshall(newReward, { removeUndefinedValues: true }),
+    };
+
+    await this.client.send(new PutItemCommand(params));
+    return newReward;
+  }
+
   async getRewards(): Promise<Reward[] | undefined> {
     const params = {
       TableName: REWARDS_TABLE,
@@ -419,6 +442,66 @@ export default class DynamoDB implements RepositoryInterface {
           DynamoDButils.getRewardsResultMapper(unmarshall(item))
         )
       : undefined;
+  }
+
+  async getRewardById(id: string): Promise<Reward | undefined> {
+    const params = {
+      TableName: REWARDS_TABLE,
+      Key: marshall({ id }),
+    };
+
+    const result = await this.client.send(new GetItemCommand(params));
+    return result.Item ? (unmarshall(result.Item) as Reward) : undefined;
+  }
+
+  async updateReward(
+    id: string,
+    rewardName: string,
+    rewardDescription: string,
+    rewardPoints: number,
+    redeemBy: string
+  ): Promise<boolean> {
+    const params = {
+      TableName: REWARDS_TABLE,
+      Key: marshall({ id }),
+      UpdateExpression: `
+        SET
+          rewardName = :rewardName,
+          rewardDescription = :rewardDescription,
+          rewardPoints = :rewardPoints,
+          redeemBy = :redeemBy
+      `,
+      ExpressionAttributeValues: marshall({
+        ":rewardName": rewardName,
+        ":rewardDescription": rewardDescription,
+        ":rewardPoints": rewardPoints,
+        ":redeemBy": redeemBy,
+      }),
+      ReturnValues: ReturnValue.ALL_NEW,
+    };
+
+    try {
+      await this.client.send(new UpdateItemCommand(params));
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  }
+
+  async deleteReward(id: string): Promise<boolean> {
+    const params = {
+      TableName: REWARDS_TABLE,
+      Key: marshall({ id }),
+    };
+
+    try {
+      await this.client.send(new DeleteItemCommand(params));
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
   }
 
   async createScan(
@@ -554,12 +637,12 @@ class DynamoDButils {
 
   static getRewardsResultMapper(result: any): Reward {
     return {
-      rewardId: result.id || "",
+      id: result.id || "",
       rewardName: result.rewardName || "",
       rewardDescription: result.rewardDescription || "",
       rewardPoints: result.rewardPoints || 0,
       rewardActiveStatus: result.rewardActiveStatus || false,
-      redeem_by: result.redeem_by || "",
+      redeemBy: result.redeemBy || "",
     };
   }
 

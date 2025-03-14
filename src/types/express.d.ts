@@ -23,12 +23,12 @@ export interface Device {
 }
 
 export interface Reward {
-  rewardId: string;
+  id: string;
   rewardName: string;
   rewardDescription: string;
   rewardPoints: number;
   rewardActiveStatus: boolean;
-  redeem_by: string | null;
+  redeemBy: string | null;
 }
 
 export interface Scan {

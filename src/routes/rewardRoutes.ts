@@ -1,24 +1,27 @@
-import { Router, Request, Response } from "express";
-import { getRewards } from "../controllers/rewardControllers.js";
+import { Router } from "express";
+import {
+  createReward,
+  getRewards,
+  getRewardById,
+  updateReward,
+  deleteReward,
+} from "../controllers/rewardControllers.js";
 
 const router = Router();
+
+// Create Reward
+router.post("/createReward", createReward);
+
+// Update Reward
+router.put("/updateReward/:id", updateReward);
 
 // Get Rewards
 router.get("/getRewards", getRewards);
 
-// Get Reward Points
-router.get(
-  "/rewardPoints",
-  async (req: Request, res: Response): Promise<any> => {
-    // TODO: Implement Function
-    throw new Error("Unimplemented Function");
-  }
-);
+// Get Reward by ID
+router.get("/getRewardById/", getRewardById);
 
-// Redeem Reward Points
-router.post("/reedem", async (req: Request, res: Response): Promise<any> => {
-  // TODO: Implement Function
-  throw new Error("Unimplemented Function");
-});
+// Delete Reward
+router.delete("/deleteReward/:id", deleteReward);
 
 export default router;

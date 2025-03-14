@@ -51,7 +51,22 @@ export default abstract class RepositoryInterface {
   abstract deleteDevice(id: string): Promise<boolean>;
 
   // Reward Table Actions
+  abstract createReward(
+    rewardName: string,
+    rewardDescription: string,
+    rewardPoints: number,
+    redeemBy: string
+  ): Promise<Reward>;
+  abstract getRewardById(id: string): Promise<Reward | undefined>;
   abstract getRewards(): Promise<Reward[] | undefined>;
+  abstract updateReward(
+    id: string,
+    rewardName: string,
+    rewardDescription: string,
+    rewardPoints: number,
+    redeemBy: string
+  ): Promise<boolean>;
+  abstract deleteReward(id: string): Promise<boolean>;
 
   // Scan Table Actions
   abstract createScan(
