@@ -1,13 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { VerifyErrors } from "jsonwebtoken";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 
 import DynamoDB from "../repository/dynamoDB.js";
-import {
-  createResetToken,
-  createSignedToken,
-  validateToken,
-} from "../utils/authUtils.js";
+import { createSignedToken } from "../utils/authUtils.js";
 import RepositoryInterface from "../repository/repositoryInterface.js";
 
 const repository: RepositoryInterface = DynamoDB.getInstance();
@@ -269,17 +266,187 @@ export const forgotPassword = async (
       return res.status(400).json({ message: "User not found" });
     }
 
-    const resetToken = createResetToken(email);
+    // Generate a random 6-digit OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
 
-    // Send the reset token to the user's email (integrate with an email service here?)
-    return res.json({
-      message: "Password reset token sent",
-      resetToken: resetToken,
-    });
+    // Store OTP in database
+    await repository.storeOTP(email, otp);
+
+    // Send OTP via email
+    try {
+      await sendEmail(email, otp);
+      return res.json({ message: "OTP sent successfully" });
+    } catch (error) {
+      await repository.deleteOTP(email);
+      return res.status(500).json({ message: "Failed to send OTP" });
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }
+};
+
+function sendEmail(recipient_email: string, OTP: string) {
+  return new Promise((resolve, reject) => {
+    var username = process.env.EMAIL_USER;
+    var password = process.env.EMAIL_APP_PASSWORD;
+    var transporter = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: username,
+        pass: password,
+      },
+      logger: true,
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: recipient_email,
+      subject: "ReBottle Password Recovery",
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Reset OTP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    .email-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .email-header {
+      background-color: #ECF1DA;
+      color: #000000;
+      text-align: center;
+      padding: 20px;
+    }
+    .email-body {
+      padding: 30px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .otp {
+      font-size: 46px;
+      font-weight: bold;
+      color: #23583A;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      background-color: #f1f1f1;
+      color: #888;
+    }
+    .footer a {
+      color: #0000ff;
+      text-decoration: none;
+    }
+    .button {
+      display: inline-block;
+      background-color: #23583A;
+      color: #fff;
+      padding: 10px 20px;
+      text-decoration: none;
+      font-size: 16px;
+      border-radius: 5px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .button:hover {
+      background-color: #12470b;
+    }
+    /* ReBottle branding style */
+    .brand-name {
+      color: #23583A; /* Green color */
+      font-family: 'Noto Sans Devanagari', sans-serif; /* Fallback to sans-serif */
+      font-weight: bold;
+    }
+  </style>
+  <!-- Google Fonts for Noto Sans Devanagari -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    
+
+  <div class="email-container">
+    <div class="email-header">
+      <h1><span class="brand-name">ReBottle</span> Password Reset Request</h1>
+    </div>
+    
+    <div class="email-body">
+      <p>Hello,</p>
+      <p>We received a request to reset your password for your <span class="brand-name">ReBottle</span> account. To reset your password, please use the following One-Time Password (OTP):</p>
+
+      <div class="otp">${OTP}</div>
+      
+      <p>This OTP is valid for the next 10 minutes, so please use it before it expires. If you did not request a password reset, you can safely ignore this email.</p>
+      
+      <p>If you want to reset your password, click the button below:</p>
+      
+      <a href="{{resetLink}}" class="button">Reset Password</a>
+      
+      <p>Thank you for using <span class="brand-name">ReBottle</span>!</p>
+    </div>
+
+    <div class="footer">
+      <p>If you have any questions, feel free to <a href="mailto:support@rebottle.com">contact our support team</a>.</p>
+      <p>&copy; 2025 <span class="brand-name">ReBottle</span>, All Rights Reserved.</p>
+    </div>
+  </div>
+
+</body>
+</html>`,
+    };
+
+    interface MailOptions {
+      from: string;
+      to: string;
+      subject: string;
+      html: string;
+    }
+
+    interface SendMailInfo {
+      response: string;
+    }
+
+    transporter.sendMail(
+      mailOptions as MailOptions,
+      (error: Error | null, info: SendMailInfo) => {
+        if (error) {
+          console.log(error);
+          return reject({ message: "Failed to send email", error });
+        } else {
+          console.log("Email sent: " + info.response);
+          return resolve({ message: "Email sent successfully" });
+        }
+      }
+    );
+  });
+}
+
+export const sendResetEmail = async (req: Request, res: Response) => {
+  sendEmail(req.body.email, req.body.OTP)
+    .then((response: any) =>
+      res.status(200).json({ message: response.message })
+    )
+    .catch((error: any) => res.status(500).json({ message: error.message }));
 };
 
 export const resetPassword = async (
@@ -287,51 +454,41 @@ export const resetPassword = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { resetToken, newPassword } = req.body;
+    const { email, otp, newPassword } = req.body;
 
-    // Verify the reset token
-    let decoded: any;
-    try {
-      decoded = validateToken(
-        resetToken,
-        (err: VerifyErrors | null, decoded: any) => {
-          if (err)
-            return res
-              .status(400)
-              .json({ message: "Invalid or expired reset token" });
-          // TODO: implement callback for password change
-        }
-      );
-    } catch (error) {
-      return res
-        .status(400)
-        .json({ message: "Invalid or expired reset token", reason: error });
+    // Verify OTP
+    const isValid = await repository.verifyOTP(email, otp);
+    if (!isValid) {
+      return res.status(400).json({
+        message: "Invalid or expired OTP",
+      });
     }
 
-    // Find the user by email from the token
-    const user = await repository.findUserByEmail(decoded.email);
-    if (user) {
-      // Update user password
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      const updatedUser = await repository.updateUserPassword(
-        user.id,
-        hashedPassword
-      );
-      if (updatedUser) {
-        return res.json({
-          message: "Password successfully updated for user",
-        });
-      } else {
-        return res
-          .status(500)
-          .json({ message: "Failed to update user password" });
-      }
+    // Find the user
+    const user = await repository.findUserByEmail(email);
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
     }
 
-    return res.status(400).json({ message: "User not found" });
+    // Update password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updatedUser = await repository.updateUserPassword(
+      user.id,
+      hashedPassword
+    );
+
+    if (updatedUser) {
+      // Delete the used OTP
+      await repository.deleteOTP(email);
+      return res.json({
+        message: "Password successfully updated",
+      });
+    }
+
+    return res.status(500).json({ message: "Failed to update password" });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Server error", error });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 

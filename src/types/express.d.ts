@@ -40,6 +40,12 @@ export interface Scan {
   bottleType: number;
 }
 
+export interface OTP {
+  email: string;
+  code: string;
+  expiresAt: Date;
+}
+
 declare global {
   namespace Express {
     interface Request {

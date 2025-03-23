@@ -1,4 +1,4 @@
-import { Device, Reward, Scan, User } from "../types/express.js";
+import { Device, Reward, Scan, User, OTP } from "../types/express.js";
 
 export default abstract class RepositoryInterface {
   // Vendor Table Actions
@@ -57,7 +57,6 @@ export default abstract class RepositoryInterface {
     rewardPoints: number,
     redeemBy: string
   ): Promise<Reward>;
-  abstract getRewardById(id: string): Promise<Reward | undefined>;
   abstract getRewards(): Promise<Reward[] | undefined>;
   abstract updateReward(
     id: string,
@@ -77,4 +76,11 @@ export default abstract class RepositoryInterface {
   abstract getScanByData(scanData: string): Promise<Scan[]>;
   abstract updateScanUserId(scanData: string, userId: string): Promise<Scan>;
   abstract getScansByUser(userId: string): Promise<any>;
+  abstract deleteScan(scanData: string): Promise<boolean>;
+  abstract getScanById(scanId: string): Promise<Scan | undefined>;
+
+  // OTP Actions
+  abstract storeOTP(email: string, otp: string): Promise<OTP>;
+  abstract verifyOTP(email: string, otp: string): Promise<boolean>;
+  abstract deleteOTP(email: string): Promise<boolean>;
 }

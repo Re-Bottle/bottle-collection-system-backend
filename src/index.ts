@@ -2,24 +2,26 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
-import authRoutes from "./routes/authRoutes.js"; // Adjust the path based on your directory structure
+import authRoutes from "./routes/authRoutes.js";
 import deviceRoutes from "./routes/deviceRoutes.js";
 import rewardRoutes from "./routes/rewardRoutes.js";
 import scanRoutes from "./routes/scanRoutes.js";
 import { authenticateJWT } from "./utils/authUtils.js";
+// import dotenv from "dotenv";
 
+// dotenv.config();
 const app = express();
 
 // Middleware
-app.use(express.json()); // For parsing JSON bodies
-app.use(cookieParser()); // For cookie parsing
+app.use(express.json());
+app.use(cookieParser());
 app.use(
   cors({
     credentials: true,
-    origin: "http://localhost:3001",
+    origin: process.env.CORS_ORIGIN || "http://localhost:3001",
     methods: ["GET", "POST", "DELETE", "PUT"],
   })
-); // For allowing cross-origin requests
+);
 
 // Authentication routes
 app.use("/auth", authRoutes);

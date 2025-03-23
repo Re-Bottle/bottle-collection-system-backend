@@ -181,7 +181,6 @@ describe("User Update", () => {
       .send(userData)
       .end((err: Error, res: any) => {
         if (err) return done(err);
-        console.log(res.body);
         expect(res).to.have.status(200);
         expect(res.body)
           .to.have.property("message")

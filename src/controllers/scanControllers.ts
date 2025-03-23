@@ -62,3 +62,16 @@ export const getScansByUser = async (
   }
   return res.status(200).json({ scans });
 };
+
+export const deleteScan = async (req: Request, res: Response): Promise<any> => {
+  const { scanId } = req.body;
+  if (!scanId) return res.status(400).json({ message: "Scan ID missing" });
+  const scan = await repository.getScanById(scanId);
+  if (!scan) return res.status(404).json({ message: "Scan not found" });
+  try {
+    await repository.deleteScan(scanId);
+    return res.status(200).json({ message: "Scan deleted" });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};

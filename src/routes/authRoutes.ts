@@ -15,6 +15,7 @@ import {
   deleteUser,
   userRequestValidator,
   deleteVendor,
+  sendResetEmail,
 } from "../controllers/authController.js";
 import { authenticateJWT } from "../utils/authUtils.js";
 
@@ -42,6 +43,9 @@ router.post("/forgotPassword", forgotPassword);
 
 // Reset Password
 router.post("/resetPassword", resetPassword);
+
+// Send eamil
+router.post("/sendResetEmail", sendResetEmail);
 
 // Update User Details
 router.post("/user", authenticateJWT, userRequestValidator, updateUser);

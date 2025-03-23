@@ -8,7 +8,7 @@ import {
   UpdateItemCommand,
   ScanCommand,
 } from "@aws-sdk/client-dynamodb";
-import type { Device, User, Reward } from "../types/express.js";
+import type { Device, User, Reward, OTP } from "../types/express.js";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
 import RepositoryInterface from "./repositoryInterface.js";
@@ -25,6 +25,7 @@ const VENDORS_TABLE = "Vendors";
 const DEVICES_TABLE = "Devices";
 const REWARDS_TABLE = "Rewards";
 const SCANS_TABLE = "Scans";
+const OTP_TABLE = "OTP";
 
 export default class DynamoDB implements RepositoryInterface {
   private static instance: DynamoDB;
@@ -444,16 +445,6 @@ export default class DynamoDB implements RepositoryInterface {
       : undefined;
   }
 
-  async getRewardById(id: string): Promise<Reward | undefined> {
-    const params = {
-      TableName: REWARDS_TABLE,
-      Key: marshall({ id }),
-    };
-
-    const result = await this.client.send(new GetItemCommand(params));
-    return result.Item ? (unmarshall(result.Item) as Reward) : undefined;
-  }
-
   async updateReward(
     id: string,
     rewardName: string,
@@ -582,6 +573,92 @@ export default class DynamoDB implements RepositoryInterface {
           ? result.Items.map((item) => unmarshall(item))
           : undefined
       );
+  }
+
+  async getScanById(id: string): Promise<any> {
+    const params = {
+      TableName: SCANS_TABLE,
+      Key: marshall({ id }),
+    };
+
+    const result = await this.client.send(new GetItemCommand(params));
+    return result.Item ? unmarshall(result.Item) : undefined;
+  }
+
+  async deleteScan(id: string): Promise<boolean> {
+    const params = {
+      TableName: SCANS_TABLE,
+      Key: marshall({ id }),
+    };
+
+    try {
+      await this.client.send(new DeleteItemCommand(params));
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  }
+
+  async storeOTP(email: string, otp: string): Promise<OTP> {
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+    const otpData: OTP = {
+      email,
+      code: otp,
+      expiresAt
+    };
+
+    const params = {
+      TableName: OTP_TABLE,
+      Item: marshall({
+        email,
+        code: otp,
+        expiresAt: expiresAt.toISOString()
+      }),
+    };
+
+    await this.client.send(new PutItemCommand(params));
+    return otpData;
+  }
+
+  async verifyOTP(email: string, otp: string): Promise<boolean> {
+    const params = {
+      TableName: OTP_TABLE,
+      Key: marshall({ email }),
+    };
+
+    const result = await this.client.send(new GetItemCommand(params));
+    if (!result.Item) return false;
+
+    const otpRecord = unmarshall(result.Item) as OTP;
+    const now = new Date();
+    const expiresAt = new Date(otpRecord.expiresAt);
+
+    if (now > expiresAt) {
+      await this.deleteOTP(email);
+      return false;
+    }
+
+    if (otpRecord.code !== otp) {
+      return false;
+    }
+
+    return true;
+  }
+
+  async deleteOTP(email: string): Promise<boolean> {
+    const params = {
+      TableName: OTP_TABLE,
+      Key: marshall({ email }),
+    };
+
+    try {
+      await this.client.send(new DeleteItemCommand(params));
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
   }
 }
 

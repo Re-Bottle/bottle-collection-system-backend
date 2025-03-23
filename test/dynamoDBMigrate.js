@@ -134,6 +134,18 @@ const createRewardsTableParams = {
   BillingMode: "PAY_PER_REQUEST",
 };
 
+// Create OTP table
+const createOTPTableParams = {
+  TableName: "OTP",
+  AttributeDefinitions: [
+    { AttributeName: "email", AttributeType: "S" },
+  ],
+  KeySchema: [
+    { AttributeName: "email", KeyType: "HASH" },
+  ],
+  BillingMode: "PAY_PER_REQUEST",
+};
+
 // Function to create a table
 const createTable = async (params) => {
   try {
@@ -189,6 +201,7 @@ const insertVendor = async () => {
     await createTable(createDevicesTableParams);
     await createTable(createScansTableParams);
     await createTable(createRewardsTableParams);
+    await createTable(createOTPTableParams);
 
     // Validate tables existence
     await describeTable("Users");
@@ -196,6 +209,7 @@ const insertVendor = async () => {
     await describeTable("Devices");
     await describeTable("Scans");
     await describeTable("Rewards");
+    await describeTable("OTP");
 
     await insertVendor();
 

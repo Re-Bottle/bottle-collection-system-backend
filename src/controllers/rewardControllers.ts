@@ -20,7 +20,9 @@ export const createReward = async (
     rewardPoints,
     redeemBy
   );
-  return res.status(200).json({ reward });
+  return res
+    .status(200)
+    .json({ reward, message: "Reward created successfully" });
 };
 
 export const getRewards = async (req: Request, res: Response): Promise<any> => {
@@ -30,22 +32,16 @@ export const getRewards = async (req: Request, res: Response): Promise<any> => {
   return res.status(200).json({ rewards });
 };
 
-export const getRewardById = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
-  const id = req.body.id;
-  const reward: Reward | undefined = await repository.getRewardById(id);
-  if (!reward) return res.status(404).json({ message: "Reward not found" });
-  return res.status(200).json({ reward });
-};
-
 export const updateReward = async (
   req: Request,
   res: Response
 ): Promise<any> => {
   const { id } = req.params;
   const { rewardName, rewardDescription, rewardPoints, redeemBy } = req.body;
+
+  if (!rewardName || !rewardDescription || !rewardPoints || !redeemBy) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
 
   const updated: boolean = await repository.updateReward(
     id,
@@ -55,20 +51,20 @@ export const updateReward = async (
     redeemBy
   );
 
-  if (!updated) return res.status(404).json({ message: "Reward not found" });
+  if (!updated) return res.status(204);
 
-  return res.status(200).json({ message: "Reward updated" });
+  return res.status(200).json({ message: "Reward updated successfully" });
 };
 
 export const deleteReward = async (
   req: Request,
   res: Response
 ): Promise<any> => {
-  const { id } = req.params; // Get the ID from URL parameter
+  const { id } = req.params;
 
   const deleted: boolean = await repository.deleteReward(id);
 
-  if (!deleted) return res.status(404).json({ message: "Reward not found" });
+  if (!deleted) return res.status(204);
 
-  return res.status(200).json({ message: "Reward deleted" });
+  return res.status(200).json({ message: "Reward deleted successfully" });
 };
