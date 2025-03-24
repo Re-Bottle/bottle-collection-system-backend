@@ -109,18 +109,11 @@ const createScansTableParams = {
       Projection: {
         ProjectionType: "ALL",
       },
-      ProvisionedThroughput: {
-        ReadCapacityUnits: 5,
-        WriteCapacityUnits: 5,
-      },
+
       IndexName: "ClaimedByIndex",
       KeySchema: [{ AttributeName: "claimedBy", KeyType: "HASH" }],
       Projection: {
         ProjectionType: "ALL",
-      },
-      ProvisionedThroughput: {
-        ReadCapacityUnits: 5,
-        WriteCapacityUnits: 5,
       },
     },
   ],
@@ -137,12 +130,8 @@ const createRewardsTableParams = {
 // Create OTP table
 const createOTPTableParams = {
   TableName: "OTP",
-  AttributeDefinitions: [
-    { AttributeName: "email", AttributeType: "S" },
-  ],
-  KeySchema: [
-    { AttributeName: "email", KeyType: "HASH" },
-  ],
+  AttributeDefinitions: [{ AttributeName: "email", AttributeType: "S" }],
+  KeySchema: [{ AttributeName: "email", KeyType: "HASH" }],
   BillingMode: "PAY_PER_REQUEST",
 };
 

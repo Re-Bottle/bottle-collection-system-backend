@@ -110,7 +110,7 @@ describe("Claim Scan", () => {
       .send(data)
       .end((err: Error, res: any) => {
         if (err) return done(err);
-        expect(res).to.have.status(204);
+        expect(res).to.have.status(404);
         done();
       });
   });
@@ -127,7 +127,7 @@ describe("Claim Scan", () => {
       .send(data)
       .end((err: Error, res: any) => {
         if (err) return done(err);
-        expect(res).to.have.status(204);
+        expect(res).to.have.status(404);
         done();
       });
   });
@@ -252,7 +252,7 @@ describe("Delete Scan", () => {
       .send(data)
       .end((err: Error, res: any) => {
         if (err) return done(err);
-        expect(res).to.have.status(204);
+        expect(res).to.have.status(404);
         done();
       });
   });

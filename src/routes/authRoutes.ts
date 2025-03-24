@@ -17,39 +17,86 @@ import {
   deleteVendor,
   sendResetEmail,
 } from "../controllers/authController.js";
-import { authenticateJWT } from "../utils/authUtils.js";
+
+import { authenticateJWT } from "../utils/authUtils.js"; // Middleware for JWT authentication
 
 const router = Router();
 
-// Signup route for a vendor
+/**
+ * @route   POST /signupVendor
+ * @desc    Register a new vendor
+ * @access  Public (Requires request validation)
+ */
 router.post("/signupVendor", signupVendorRequestValidator, signupVendor);
 
-// Login route
+/**
+ * @route   POST /loginVendor
+ * @desc    Login an existing vendor
+ * @access  Public (Requires request validation)
+ */
 router.post("/loginVendor", loginVendorRequestValidator, loginVendor);
 
+/**
+ * @route   POST /deleteVendor
+ * @desc    Deletes a vendor (Requires authentication)
+ * @access  Private (Requires JWT authentication)
+ */
 router.post("/deleteVendor", authenticateJWT, deleteVendor);
 
-// Signup route for users
+/**
+ * @route   POST /signup
+ * @desc    Register a new user
+ * @access  Public (Requires request validation)
+ */
 router.post("/signup", signupUserRequestValidator, signupUser);
 
-// Login route for users
+/**
+ * @route   POST /login
+ * @desc    Login an existing user
+ * @access  Public (Requires request validation)
+ */
 router.post("/login", loginUserRequestValidator, loginUser);
 
-// Logout route
+/**
+ * @route   POST /logout
+ * @desc    Logs out the user
+ * @access  Public
+ */
 router.post("/logout", logoutUser);
 
-// Request Password Reset (Forgot Password)
+/**
+ * @route   POST /forgotPassword
+ * @desc    Initiates password reset process by sending a reset link to the user
+ * @access  Public
+ */
 router.post("/forgotPassword", forgotPassword);
 
-// Reset Password
+/**
+ * @route   POST /resetPassword
+ * @desc    Resets the user's password using the reset token
+ * @access  Public
+ */
 router.post("/resetPassword", resetPassword);
 
-// Send eamil
+/**
+ * @route   POST /sendResetEmail
+ * @desc    Sends a password reset email to the user
+ * @access  Public
+ */
 router.post("/sendResetEmail", sendResetEmail);
 
-// Update User Details
+/**
+ * @route   POST /user
+ * @desc    Updates user details (Requires authentication)
+ * @access  Private (Requires JWT authentication)
+ */
 router.post("/user", authenticateJWT, userRequestValidator, updateUser);
 
+/**
+ * @route   POST /deleteUser
+ * @desc    Deletes a user (Requires authentication)
+ * @access  Private (Requires JWT authentication)
+ */
 router.post("/deleteUser", authenticateJWT, deleteUser);
 
 export default router;
