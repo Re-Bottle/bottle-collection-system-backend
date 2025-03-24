@@ -109,7 +109,8 @@ const createScansTableParams = {
       Projection: {
         ProjectionType: "ALL",
       },
-
+    },
+    {
       IndexName: "ClaimedByIndex",
       KeySchema: [{ AttributeName: "claimedBy", KeyType: "HASH" }],
       Projection: {
