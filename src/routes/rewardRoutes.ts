@@ -4,7 +4,10 @@ import {
   getRewards,
   updateReward,
   deleteReward,
+  getUserStats,
+  claimReward,
 } from "../controllers/rewardControllers.js";
+import { authenticateJWT } from "../utils/authUtils.js";
 
 const router = Router();
 
@@ -29,6 +32,12 @@ router.put("/updateReward/:id", updateReward);
  * @access Public or Protected
  */
 router.get("/getRewards", getRewards);
+
+// Get user stats (bottle count and points)
+router.get("/stats/:userId", getUserStats);
+
+// Claim a reward
+router.post("/claim", claimReward);
 
 /**
  * @route DELETE /deleteReward/:id

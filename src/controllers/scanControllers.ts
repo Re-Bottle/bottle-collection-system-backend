@@ -23,6 +23,7 @@ export const claimScan = async (req: Request, res: Response): Promise<any> => {
   if (scan[0].claimedBy !== "unclaimed") {
     return res.status(400).json({ message: "Scan has already been claimed" });
   }
+
   const currentTime = new Date().getTime();
   const scanTimestamp = scan[0].timestamp
     ? new Date(scan[0].timestamp).getTime()
@@ -31,21 +32,26 @@ export const claimScan = async (req: Request, res: Response): Promise<any> => {
   if (isNaN(scanTimestamp)) {
     return res.status(400).json({ message: "Invalid scan timestamp" });
   }
+  
   const timeDifference = (currentTime - scanTimestamp) / 1000 / 60; // time difference in minutes
 
-  if (timeDifference > 10)
+  if (timeDifference > 60)
     return res
       .status(400)
       .json({ message: "Scan cannot be claimed after 10 minutes" });
+      
   try {
-    const updatedScan = await repository.updateScanUserId(
-      scan[0].id,
-      claimedBy
-    );
-    return res
-      .status(200)
-      .json({ message: "Scan has been claimed", scan: updatedScan });
+    const result = await repository.updateScanUserId(scan[0].id, claimedBy);
+    return res.status(200).json({ 
+      message: "Scan has been claimed", 
+      scan: result.scan,
+      user: {
+        totalPoints: result.user.totalPoints,
+        totalBottles: result.user.totalBottles
+      }
+    });
   } catch (error) {
+    console.error('Error claiming scan:', error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

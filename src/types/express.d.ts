@@ -3,6 +3,8 @@ export interface User {
   email: string;
   password: string;
   name: string;
+  totalPoints: number;
+  totalBottles: number;
 }
 
 export interface Device {
@@ -44,6 +46,23 @@ export interface OTP {
   email: string;
   code: string;
   expiresAt: Date;
+}
+
+export interface Claim {
+  id: string;
+  userId: string;
+  rewardId: string;
+  rewardPoints: number;
+  claimedAt: string;
+  status: "claimed" | "used";
+}
+
+export interface ScanClaimResponse {
+  scan: Scan;
+  user: {
+    totalPoints: number;
+    totalBottles: number;
+  };
 }
 
 declare global {

@@ -1,3 +1,11 @@
+import type {
+  Device,
+  User,
+  Reward,
+  OTP,
+  Scan,
+  ScanClaimResponse,
+} from "../types/express.js";
 import {
   DeleteItemCommand,
   DynamoDBClient,
@@ -8,7 +16,6 @@ import {
   UpdateItemCommand,
   ScanCommand,
 } from "@aws-sdk/client-dynamodb";
-import type { Device, User, Reward, OTP } from "../types/express.js";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
 import RepositoryInterface from "./repositoryInterface.js";
@@ -97,6 +104,8 @@ export default class DynamoDB implements RepositoryInterface {
       email,
       password,
       name,
+      totalPoints: 0,
+      totalBottles: 0,
     };
 
     const params = {
@@ -154,10 +163,12 @@ export default class DynamoDB implements RepositoryInterface {
     name: string
   ): Promise<User> {
     const newUser: User = {
-      id: String(Date.now()), // Use timestamp as ID
+      id: String(Date.now()),
       email,
       password,
       name,
+      totalPoints: 0,
+      totalBottles: 0,
     };
 
     const params = {
@@ -540,8 +551,18 @@ export default class DynamoDB implements RepositoryInterface {
     }
   }
 
-  async updateScanUserId(id: string, claimedBy: string): Promise<any> {
-    const params = {
+  async updateScanUserId(
+    id: string,
+    claimedBy: string
+  ): Promise<ScanClaimResponse> {
+    // First, get the scan to know the bottle type
+    const scan = await this.getScanById(id);
+    if (!scan) {
+      throw new Error("Scan not found");
+    }
+
+    // Update the scan's claimedBy
+    const updateScanParams = {
       TableName: SCANS_TABLE,
       Key: marshall({ id }),
       UpdateExpression: "set #claimedBy = :claimedBy",
@@ -554,8 +575,43 @@ export default class DynamoDB implements RepositoryInterface {
       ReturnValues: ReturnValue.ALL_NEW,
     };
 
-    const result = await this.client.send(new UpdateItemCommand(params));
-    return result.Attributes ? unmarshall(result.Attributes) : undefined;
+    // Update user's points and bottle count
+    const pointsToAdd = scan.bottleType * 10; // 10 points per bottle type
+    const updateUserParams = {
+      TableName: USERS_TABLE,
+      Key: marshall({ id: claimedBy }),
+      UpdateExpression: "ADD totalPoints :points, totalBottles :bottles",
+      ExpressionAttributeValues: marshall({
+        ":points": pointsToAdd,
+        ":bottles": 1,
+      }),
+      ReturnValues: ReturnValue.ALL_NEW,
+    };
+
+    try {
+      // Update both scan and user in parallel
+      const [scanResult, userResult] = await Promise.all([
+        this.client.send(new UpdateItemCommand(updateScanParams)),
+        this.client.send(new UpdateItemCommand(updateUserParams)),
+      ]);
+
+      return {
+        scan: scanResult.Attributes
+          ? (unmarshall(scanResult.Attributes) as Scan)
+          : scan,
+        user: {
+          totalPoints: userResult.Attributes
+            ? unmarshall(userResult.Attributes).totalPoints
+            : 0,
+          totalBottles: userResult.Attributes
+            ? unmarshall(userResult.Attributes).totalBottles
+            : 0,
+        },
+      };
+    } catch (error) {
+      console.error("Error updating scan and user:", error);
+      throw error;
+    }
   }
 
   async getScansByUser(claimedBy: string): Promise<any> {
@@ -600,12 +656,162 @@ export default class DynamoDB implements RepositoryInterface {
     }
   }
 
+  async deductUserPoints(
+    userId: string,
+    pointsToDeduct: number
+  ): Promise<void> {
+    const params = {
+      TableName: USERS_TABLE,
+      Key: marshall({ id: userId }),
+      UpdateExpression: "ADD totalPoints :points",
+      ConditionExpression: "totalPoints >= :deductPoints",
+      ExpressionAttributeValues: marshall({
+        ":points": -pointsToDeduct, // Use negative value to deduct points
+        ":deductPoints": pointsToDeduct,
+      }),
+      ReturnValues: ReturnValue.UPDATED_NEW,
+    };
+
+    try {
+      await this.client.send(new UpdateItemCommand(params));
+    } catch (error: any) {
+      if (error.name === "ConditionalCheckFailedException") {
+        throw new Error("Insufficient points");
+      }
+      console.error("Error deducting user points:", error);
+      throw error;
+    }
+  }
+
+  async getUserStats(
+    userId: string
+  ): Promise<{ totalBottles: number; totalPoints: number }> {
+    const params = {
+      TableName: USERS_TABLE,
+      Key: marshall({ id: userId }),
+    };
+
+    try {
+      const result = await this.client.send(new GetItemCommand(params));
+      if (!result.Item) {
+        throw new Error("User not found");
+      }
+      const user = unmarshall(result.Item);
+      return {
+        totalBottles: user.totalBottles || 0,
+        totalPoints: user.totalPoints || 0,
+      };
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      throw error;
+    }
+  }
+
+  async claimReward(userId: string, rewardId: string): Promise<boolean> {
+    try {
+      // Get user's current points
+      const { totalPoints } = await this.getUserStats(userId);
+
+      // Get reward details
+      const params = {
+        TableName: REWARDS_TABLE,
+        Key: marshall({ id: rewardId }),
+      };
+
+      const result = await this.client.send(new GetItemCommand(params));
+      if (!result.Item) {
+        throw new Error("Reward not found");
+      }
+
+      const reward = unmarshall(result.Item) as Reward;
+
+      // Check if user has enough points
+      if (totalPoints < reward.rewardPoints) {
+        return false;
+      }
+
+      // Create a claim record
+      const claimId = String(Date.now());
+      const claim = {
+        id: claimId,
+        userId,
+        rewardId,
+        rewardPoints: reward.rewardPoints,
+        claimedAt: new Date().toISOString(),
+        status: "claimed",
+      };
+
+      const claimParams = {
+        TableName: "Claims",
+        Item: marshall(claim),
+      };
+
+      // Create atomic transaction: add claim and deduct points
+      await this.client.send(new PutItemCommand(claimParams));
+
+      // Deduct points from user
+      await this.deductUserPoints(userId, reward.rewardPoints);
+
+      return true;
+    } catch (error) {
+      console.error("Error claiming reward:", error);
+      throw error;
+    }
+  }
+
+  // async claimReward(userId: string, rewardId: string): Promise<boolean> {
+  //   try {
+  //     // Get user's current points
+  //     const { totalPoints } = await this.getUserStats(userId);
+
+  //     // Get reward details
+  //     const params = {
+  //       TableName: REWARDS_TABLE,
+  //       Key: marshall({ id: rewardId }),
+  //     };
+
+  //     const result = await this.client.send(new GetItemCommand(params));
+  //     if (!result.Item) {
+  //       throw new Error("Reward not found");
+  //     }
+
+  //     const reward = unmarshall(result.Item) as Reward;
+
+  //     // Check if user has enough points
+  //     if (totalPoints < reward.rewardPoints) {
+  //       return false;
+  //     }
+
+  //     // Create a claim record
+  //     const claimId = String(Date.now());
+  //     const claim = {
+  //       id: claimId,
+  //       userId,
+  //       rewardId,
+  //       rewardPoints: reward.rewardPoints,
+  //       claimedAt: new Date().toISOString(),
+  //       status: "claimed",
+  //     };
+
+  //     const claimParams = {
+  //       TableName: "Claims",
+  //       Item: marshall(claim),
+  //     };
+
+  //     await this.client.send(new PutItemCommand(claimParams));
+  //     return true;
+  //   } catch (error) {
+  //     console.error("Error claiming reward:", error);
+  //     throw error;
+  //   }
+  // }
+
   async storeOTP(email: string, otp: string): Promise<OTP> {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
     const otpData: OTP = {
       email,
       code: otp,
-      expiresAt
+      expiresAt,
     };
 
     const params = {
@@ -613,7 +819,7 @@ export default class DynamoDB implements RepositoryInterface {
       Item: marshall({
         email,
         code: otp,
-        expiresAt: expiresAt.toISOString()
+        expiresAt: expiresAt.toISOString(),
       }),
     };
 
