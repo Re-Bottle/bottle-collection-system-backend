@@ -6,6 +6,7 @@ import {
   deleteReward,
   getUserStats,
   claimReward,
+  getUserClaims,
 } from "../controllers/rewardControllers.js";
 import { authenticateJWT } from "../utils/authUtils.js";
 
@@ -35,6 +36,9 @@ router.get("/getRewards", getRewards);
 
 // Get user stats (bottle count and points)
 router.get("/stats/:userId", getUserStats);
+
+// Get user claims
+router.get("/claims/:userId", getUserClaims);
 
 // Claim a reward
 router.post("/claim", claimReward);

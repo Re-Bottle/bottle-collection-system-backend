@@ -4,25 +4,14 @@ export default abstract class RepositoryInterface {
   // Vendor Table Actions
   abstract findVendorByEmail(email: string): Promise<User | undefined>;
   abstract findVendorById(id: string): Promise<User | undefined>;
-  abstract createVendor(
-    email: string,
-    password: string,
-    name: string
-  ): Promise<User>;
+  abstract createVendor(email: string, password: string, name: string): Promise<User>;
   abstract deleteVendor(id: string): Promise<boolean>;
 
   // User Table Actions
   abstract findUserByEmail(email: string): Promise<User | undefined>;
   abstract findUserById(id: string): Promise<User | undefined>;
-  abstract createUser(
-    email: string,
-    password: string,
-    name: string
-  ): Promise<User>;
-  abstract updateUserPassword(
-    id: string,
-    password: string
-  ): Promise<User | undefined>;
+  abstract createUser(email: string, password: string, name: string): Promise<User>;
+  abstract updateUserPassword(id: string, password: string): Promise<User | undefined>;
   abstract updateUserName(id: string, name: string): Promise<User | undefined>;
   abstract deleteUser(id: string): Promise<boolean>;
 
@@ -38,10 +27,7 @@ export default abstract class RepositoryInterface {
   abstract getDevice(id: string): Promise<Device | undefined>;
   abstract findDevicesByVendor(vendorId: string): Promise<Device[] | undefined>;
   abstract findDeviceById(id: string): Promise<Device | undefined>;
-  abstract updateDeviceTimestamp(
-    id: string,
-    wasProvisioned: Boolean
-  ): Promise<Device>;
+  abstract updateDeviceTimestamp(id: string, wasProvisioned: Boolean): Promise<Device>;
   abstract updateDeviceDetails(
     id: string,
     deviceName: string,
@@ -69,18 +55,16 @@ export default abstract class RepositoryInterface {
   abstract getUserStats(userId: string): Promise<{totalBottles: number, totalPoints: number}>;
   abstract claimReward(userId: string, rewardId: string): Promise<boolean>;
 
-
   // Scan Table Actions
-  abstract createScan(
-    deviceId: string,
-    scanData: string,
-    bottleType: number
-  ): Promise<Scan>;
+  abstract createScan(deviceId: string, scanData: string, bottleType: number): Promise<Scan>;
   abstract getScanByData(scanData: string): Promise<Scan[]>;
   abstract updateScanUserId(id: string, userId: string): Promise<ScanClaimResponse>;
   abstract getScansByUser(userId: string): Promise<any>;
   abstract deleteScan(scanData: string): Promise<boolean>;
   abstract getScanById(scanId: string): Promise<Scan | undefined>;
+
+  // Claims Table Actions
+  abstract getClaimsByUserId(userId: string): Promise<any[]>;
 
   // OTP Actions
   abstract storeOTP(email: string, otp: string): Promise<OTP>;

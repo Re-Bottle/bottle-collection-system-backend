@@ -68,12 +68,10 @@ describe("Claim Scan", () => {
       .end((err: Error, res: any) => {
         if (err) return done(err);
         expect(res).to.have.status(200);
-        expect(res.body)
-          .to.have.property("message")
-          .eql("Scan has been claimed");
-        expect(res.body)
-          .to.have.nested.property("scan.claimedBy")
-          .not.eql("unclaimed");
+        expect(res.body).to.have.property("message").eql("Scan has been claimed");
+        expect(res.body).to.have.nested.property("scan.claimedBy").not.eql("unclaimed");
+        expect(res.body).to.have.nested.property("user.totalPoints").to.be.a("number");
+        expect(res.body).to.have.nested.property("user.totalBottles").to.be.a("number");
         done();
       });
   });
@@ -167,9 +165,8 @@ describe("Get Lists of Scans by User", () => {
       .send(data)
       .end((err: Error, res: any) => {
         if (err) return done(err);
-
         expect(res).to.have.status(200);
-        expect(res.body).to.have.property("scans");
+        expect(res.body).to.have.property("scans").to.be.an("array");
         done();
       });
   });
@@ -191,7 +188,7 @@ describe("Get Lists of Scans by User", () => {
   });
 
   // Test case: No scans found for a valid user
-  it("should return a 204 status and an empty scans array when no scans are found", function (done) {
+  it("should return 204 and empty scans array when no scans are found", function (done) {
     let data = {
       userId: "Dummy User",
     };
@@ -202,7 +199,7 @@ describe("Get Lists of Scans by User", () => {
       .send(data)
       .end((err: Error, res: any) => {
         if (err) return done(err);
-        expect(res.status).to.equal(204);
+        expect(res).to.have.status(204);
         done();
       });
   });

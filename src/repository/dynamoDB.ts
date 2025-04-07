@@ -33,6 +33,7 @@ const DEVICES_TABLE = "Devices";
 const REWARDS_TABLE = "Rewards";
 const SCANS_TABLE = "Scans";
 const OTP_TABLE = "OTP";
+const CLAIMS_TABLE = "Claims";
 
 export default class DynamoDB implements RepositoryInterface {
   private static instance: DynamoDB;
@@ -575,15 +576,18 @@ export default class DynamoDB implements RepositoryInterface {
       ReturnValues: ReturnValue.ALL_NEW,
     };
 
+    // Calculate points to add, ensure it's a number
+    const bottleType = Number(scan.bottleType) || 1;
+    const pointsToAdd = bottleType * 1;
+
     // Update user's points and bottle count
-    const pointsToAdd = scan.bottleType * 10; // 10 points per bottle type
     const updateUserParams = {
       TableName: USERS_TABLE,
       Key: marshall({ id: claimedBy }),
       UpdateExpression: "ADD totalPoints :points, totalBottles :bottles",
       ExpressionAttributeValues: marshall({
         ":points": pointsToAdd,
-        ":bottles": 1,
+        ":bottles": 1
       }),
       ReturnValues: ReturnValue.ALL_NEW,
     };
@@ -596,16 +600,10 @@ export default class DynamoDB implements RepositoryInterface {
       ]);
 
       return {
-        scan: scanResult.Attributes
-          ? (unmarshall(scanResult.Attributes) as Scan)
-          : scan,
+        scan: scanResult.Attributes ? unmarshall(scanResult.Attributes) as Scan : scan,
         user: {
-          totalPoints: userResult.Attributes
-            ? unmarshall(userResult.Attributes).totalPoints
-            : 0,
-          totalBottles: userResult.Attributes
-            ? unmarshall(userResult.Attributes).totalBottles
-            : 0,
+          totalPoints: userResult.Attributes ? (unmarshall(userResult.Attributes).totalPoints || 0) : 0,
+          totalBottles: userResult.Attributes ? (unmarshall(userResult.Attributes).totalBottles || 0) : 0,
         },
       };
     } catch (error) {
@@ -656,155 +654,25 @@ export default class DynamoDB implements RepositoryInterface {
     }
   }
 
-  async deductUserPoints(
-    userId: string,
-    pointsToDeduct: number
-  ): Promise<void> {
+  async getClaimsByUserId(userId: string): Promise<any[]> {
     const params = {
-      TableName: USERS_TABLE,
-      Key: marshall({ id: userId }),
-      UpdateExpression: "ADD totalPoints :points",
-      ConditionExpression: "totalPoints >= :deductPoints",
-      ExpressionAttributeValues: marshall({
-        ":points": -pointsToDeduct, // Use negative value to deduct points
-        ":deductPoints": pointsToDeduct,
-      }),
-      ReturnValues: ReturnValue.UPDATED_NEW,
+      TableName: CLAIMS_TABLE,
+      IndexName: "UserIdIndex",
+      KeyConditionExpression: "#userId = :userId",
+      ExpressionAttributeNames: { "#userId": "userId" },
+      ExpressionAttributeValues: marshall({ ":userId": userId }),
     };
 
     try {
-      await this.client.send(new UpdateItemCommand(params));
-    } catch (error: any) {
-      if (error.name === "ConditionalCheckFailedException") {
-        throw new Error("Insufficient points");
-      }
-      console.error("Error deducting user points:", error);
-      throw error;
-    }
-  }
-
-  async getUserStats(
-    userId: string
-  ): Promise<{ totalBottles: number; totalPoints: number }> {
-    const params = {
-      TableName: USERS_TABLE,
-      Key: marshall({ id: userId }),
-    };
-
-    try {
-      const result = await this.client.send(new GetItemCommand(params));
-      if (!result.Item) {
-        throw new Error("User not found");
-      }
-      const user = unmarshall(result.Item);
-      return {
-        totalBottles: user.totalBottles || 0,
-        totalPoints: user.totalPoints || 0,
-      };
+      const result = await this.client.send(new QueryCommand(params));
+      return result.Items?.length
+        ? result.Items.map((item) => unmarshall(item))
+        : [];
     } catch (error) {
-      console.error("Error fetching user stats:", error);
+      console.error("Error fetching claims by user:", error);
       throw error;
     }
   }
-
-  async claimReward(userId: string, rewardId: string): Promise<boolean> {
-    try {
-      // Get user's current points
-      const { totalPoints } = await this.getUserStats(userId);
-
-      // Get reward details
-      const params = {
-        TableName: REWARDS_TABLE,
-        Key: marshall({ id: rewardId }),
-      };
-
-      const result = await this.client.send(new GetItemCommand(params));
-      if (!result.Item) {
-        throw new Error("Reward not found");
-      }
-
-      const reward = unmarshall(result.Item) as Reward;
-
-      // Check if user has enough points
-      if (totalPoints < reward.rewardPoints) {
-        return false;
-      }
-
-      // Create a claim record
-      const claimId = String(Date.now());
-      const claim = {
-        id: claimId,
-        userId,
-        rewardId,
-        rewardPoints: reward.rewardPoints,
-        claimedAt: new Date().toISOString(),
-        status: "claimed",
-      };
-
-      const claimParams = {
-        TableName: "Claims",
-        Item: marshall(claim),
-      };
-
-      // Create atomic transaction: add claim and deduct points
-      await this.client.send(new PutItemCommand(claimParams));
-
-      // Deduct points from user
-      await this.deductUserPoints(userId, reward.rewardPoints);
-
-      return true;
-    } catch (error) {
-      console.error("Error claiming reward:", error);
-      throw error;
-    }
-  }
-
-  // async claimReward(userId: string, rewardId: string): Promise<boolean> {
-  //   try {
-  //     // Get user's current points
-  //     const { totalPoints } = await this.getUserStats(userId);
-
-  //     // Get reward details
-  //     const params = {
-  //       TableName: REWARDS_TABLE,
-  //       Key: marshall({ id: rewardId }),
-  //     };
-
-  //     const result = await this.client.send(new GetItemCommand(params));
-  //     if (!result.Item) {
-  //       throw new Error("Reward not found");
-  //     }
-
-  //     const reward = unmarshall(result.Item) as Reward;
-
-  //     // Check if user has enough points
-  //     if (totalPoints < reward.rewardPoints) {
-  //       return false;
-  //     }
-
-  //     // Create a claim record
-  //     const claimId = String(Date.now());
-  //     const claim = {
-  //       id: claimId,
-  //       userId,
-  //       rewardId,
-  //       rewardPoints: reward.rewardPoints,
-  //       claimedAt: new Date().toISOString(),
-  //       status: "claimed",
-  //     };
-
-  //     const claimParams = {
-  //       TableName: "Claims",
-  //       Item: marshall(claim),
-  //     };
-
-  //     await this.client.send(new PutItemCommand(claimParams));
-  //     return true;
-  //   } catch (error) {
-  //     console.error("Error claiming reward:", error);
-  //     throw error;
-  //   }
-  // }
 
   async storeOTP(email: string, otp: string): Promise<OTP> {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
@@ -863,6 +731,93 @@ export default class DynamoDB implements RepositoryInterface {
       return true;
     } catch (error) {
       console.error(error);
+      return false;
+    }
+  }
+
+  async getUserStats(
+    userId: string
+  ): Promise<{ totalBottles: number; totalPoints: number }> {
+    const params = {
+      TableName: USERS_TABLE,
+      Key: marshall({ id: userId }),
+    };
+
+    try {
+      const result = await this.client.send(new GetItemCommand(params));
+      if (!result.Item) {
+        return { totalBottles: 0, totalPoints: 0 };
+      }
+      const user = unmarshall(result.Item);
+      return {
+        totalBottles: user.totalBottles || 0,
+        totalPoints: user.totalPoints || 0,
+      };
+    } catch (error) {
+      console.error("Error getting user stats:", error);
+      throw error;
+    }
+  }
+
+  async claimReward(userId: string, rewardId: string): Promise<boolean> {
+    // First get user stats to check if they have enough points
+    const userStats = await this.getUserStats(userId);
+
+    // Get reward details
+    const rewardParams = {
+      TableName: REWARDS_TABLE,
+      Key: marshall({ id: rewardId }),
+    };
+
+    try {
+      const rewardResult = await this.client.send(
+        new GetItemCommand(rewardParams)
+      );
+      if (!rewardResult.Item) {
+        return false;
+      }
+
+      const reward = unmarshall(rewardResult.Item);
+      if (userStats.totalPoints < reward.rewardPoints) {
+        return false; // Not enough points
+      }
+
+      // Create claim record
+      const claimId = String(Date.now());
+      const newClaim = {
+        id: claimId,
+        userId,
+        rewardId,
+        rewardPoints: reward.rewardPoints,
+        claimedAt: new Date().toISOString(),
+        status: "claimed",
+      };
+
+      const createClaimParams = {
+        TableName: CLAIMS_TABLE,
+        Item: marshall(newClaim),
+      };
+
+      // Update user's points
+      const updateUserParams = {
+        TableName: USERS_TABLE,
+        Key: marshall({ id: userId }),
+        UpdateExpression: "ADD totalPoints :points",
+        ExpressionAttributeValues: marshall({
+          ":points": -reward.rewardPoints,
+        }),
+        ReturnValues: ReturnValue.ALL_NEW,
+      };
+
+      // Execute both operations
+      await Promise.all([
+        this.client.send(new PutItemCommand(createClaimParams)),
+        this.client.send(new UpdateItemCommand(updateUserParams)),
+      ]);
+
+      return true;
+    } catch (error) {
+      console.error("Error claiming reward:", error);
       return false;
     }
   }

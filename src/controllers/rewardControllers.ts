@@ -116,3 +116,21 @@ export const claimReward = async (
     return res.status(500).json({ message: "Failed to claim reward" });
   }
 };
+
+export const getUserClaims = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { userId } = req.params;
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const claims = await repository.getClaimsByUserId(userId);
+    return res.status(200).json({ claims });
+  } catch (error) {
+    console.error("Error getting user claims:", error);
+    return res.status(500).json({ message: "Failed to get user claims" });
+  }
+};
